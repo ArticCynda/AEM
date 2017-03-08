@@ -1,4 +1,4 @@
-The bootloade for all the AEM daughter boards is identical, and a modified version of Optiboot for Atmega2560. To burn it, you'll need a suitable AVR or JTAG programmer.
+The bootloader for all the AEM daughter boards is identical, and a modified version of Optiboot for Atmega2560. To burn it, you'll need a suitable AVR or JTAG programmer.
 The software tool to burn the bootloader is avrdude. Install it with
 $ sudo apt-get install avrdude
 
