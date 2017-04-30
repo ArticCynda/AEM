@@ -64,7 +64,7 @@ void loop ()
   Serial.println(readVoltage(0));
   Serial.print("read channel 2: ");
   Serial.println(readVoltage(2));
-  delay(500);
+  delay(50);
 
 } // loop()
 
@@ -80,7 +80,7 @@ static uint8_t AD7689_PIN = 10;		// chip select pin to use (10 is standard)
 // MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
 // use CPHA = CPOL = 0
 // two dummy conversions are required on startup
-SPISettings AD7689_settings (16000000, MSBFIRST, SPI_MODE0); // set SPI clock to 16 MHz
+SPISettings AD7689_settings (1000000, MSBFIRST, SPI_MODE0); // set SPI clock to 16 MHz
 
 // last device configuration
 static uint16_t ad7689_config = 0;
@@ -220,11 +220,11 @@ void setConfig() {
   Serial.print("config value: "); Serial.println(ad7689_config, HEX);
 #endif
 
-  Serial.print("\noriginal:      "); Serial.println(ad7689_config, BIN);
+  //Serial.print("\noriginal:      "); Serial.println(ad7689_config, HEX);
 
   // DEBUG
   ad7689_config = 0b1111011100000000;
-  Serial.print("modified:      "); Serial.println(ad7689_config, BIN);
+  //Serial.print("modified:      "); Serial.println(ad7689_config, HEX);
 
 
   pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
@@ -237,20 +237,21 @@ void setConfig() {
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
     SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
-    uint16_t retval = SPI.transfer(0) << 8;
-    retval |= SPI.transfer(0);
+    uint16_t retval = SPI.transfer(0xFF) << 8;
+    retval |= SPI.transfer(0xFF);
     digitalWrite(AD7689_PIN, HIGH);
-    delayMicroseconds(AD_DELAY);
+    //delayMicroseconds(AD_DELAY);
     //}
 
   bool changeset = (ad7689_config == retval);
-
+  delay(100);
 
   // change the readback flag back to 1
   ad7689_config = ad7689_config | 0x4;
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
 
   for (uint8_t i = 0; i < 2; i++) {
+    delayMicroseconds(AD_DELAY);
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
     SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
@@ -259,7 +260,7 @@ void setConfig() {
 }
 
   SPI.endTransaction ();
-  Serial.print("return config: "); Serial.println(retval, BIN);
+  //Serial.print("return config: "); Serial.println(retval, HEX);
 
 
 
