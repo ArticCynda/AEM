@@ -107,6 +107,8 @@ void init(uint8_t SSpin, float ref) {
   Serial.print("REF: "); Serial.println(conf.REF_conf, HEX);
   Serial.print("REF V: "); Serial.println(conf.REF_voltage, DEC);
 
+
+
   setConfig();
 }
 /*
