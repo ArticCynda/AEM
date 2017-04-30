@@ -22,6 +22,8 @@
 #define SEQ_SCAN_INPUT_TEMP   0b10
 #define SEQ_SCAN_INPUT        0b11
 
+//#define DEBUG
+
 struct AD7689_conf {
   uint8_t INCC_conf;
   uint8_t INx_conf;
@@ -46,12 +48,7 @@ void setup ()
   delay(1000); // give ADC time to boot
   //set_AD7689(7); // set channel
   //setConfig(INCC_UNIPOLAR_REF_GND, 6, 0, INT_REF_25, SEQ_OFF);
-  conf.INCC_conf = INCC_UNIPOLAR_REF_GND; // default to single ended reference to ground
-  conf.INx_conf = 0; // default to reading channel 0
-  conf.BW_conf = 1; // default to full bandwidth
-  conf.REF_conf = INT_REF_25; // default to internal 2.5V reference
-  conf.REF_voltage = 2.5;
-  conf.SEQ_conf = SEQ_OFF; // turn off sequencing by default
+
 
   Serial.begin(115200);
   while(!Serial);
@@ -67,7 +64,7 @@ void loop ()
   Serial.println(readVoltage(0));
   Serial.print("read channel 2: ");
   Serial.println(readVoltage(2));
-  delay(200);
+  delay(500);
 
 } // loop()
 
@@ -83,13 +80,22 @@ static uint8_t AD7689_PIN = 10;		// chip select pin to use (10 is standard)
 // MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
 // use CPHA = CPOL = 0
 // two dummy conversions are required on startup
-SPISettings AD7689_settings (10000000, MSBFIRST, SPI_MODE0);
+SPISettings AD7689_settings (16000000, MSBFIRST, SPI_MODE0); // set SPI clock to 16 MHz
 
 // last device configuration
 static uint16_t ad7689_config = 0;
 
 void init(uint8_t SSpin, float ref) {
   AD7689_PIN = SSpin;
+
+  // initialize ADC with default values
+  conf.INCC_conf = INCC_UNIPOLAR_REF_GND; // default to single ended reference to ground
+  conf.INx_conf = 0; // default to reading channel 0
+  conf.BW_conf = 1; // default to full bandwidth
+  //conf.REF_conf = INT_REF_25; // default to internal 2.5V reference
+  //conf.REF_voltage = 2.5;
+  conf.SEQ_conf = SEQ_OFF; // turn off sequencing by default
+
   if (ref == 2.5) {
     //setConfig(INCC_UNIPOLAR_REF_GND, 0, 0, INT_REF_25, SEQ_OFF); // use internal 2.5V reference
     conf.REF_conf = INT_REF_25;
@@ -102,9 +108,10 @@ void init(uint8_t SSpin, float ref) {
   }
   conf.REF_voltage = ref;
 
+#ifdef DEBUG
   Serial.print("REF: "); Serial.println(conf.REF_conf, HEX);
   Serial.print("REF V: "); Serial.println(conf.REF_voltage, DEC);
-
+#endif
 
 
   setConfig();
@@ -172,6 +179,9 @@ void setConfig() {
   #define SEQ 1
   #define RB 0
 
+  // debug
+  conf.REF_conf = INT_REF_25;
+
 /*
   // select channel and other config
   ad7689_config = 0;
@@ -188,24 +198,34 @@ void setConfig() {
   // select channel and other config
   ad7689_config = 0;
   ad7689_config |= 1 << CFG;		// update config on chip
-  //Serial.print("set INCC: "); Serial.println((conf.INCC_conf & 0b111), BIN);
   ad7689_config |= (conf.INCC_conf & 0b111) << INCC;	// mode - single ended, differential, ref, etc
-  //Serial.print("set INx: "); Serial.println((conf.INx_conf & 0b111), BIN);
   ad7689_config |= (conf.INx_conf & 0b111) << INx;	// channel
-  //Serial.print("set BW: "); Serial.println(conf.BW_conf, BIN);
   ad7689_config |= conf.BW_conf << BW;		// 1 adds more filtering
-  //Serial.print("set REF: "); Serial.println((conf.REF_conf & 0b111), BIN);
   ad7689_config |= (conf.REF_conf & 0b111) << REF; // internal 4.096V reference
   //ad7689_config |= 0B0 << REF;	// use internal 2.5V reference
   //ad7689_config |= 0B110 << REF;	// use external reference (maybe ~3.3V)
-  //Serial.print("set SEQ: "); Serial.println((conf.SEQ_conf & 0b11), BIN);
   ad7689_config |= (conf.SEQ_conf & 0b11) << SEQ;		// don't auto sequence
-  //ad7689_config |= 0 << RB;		// don't read back config value
-  ad7689_config |= 1 << RB;		// read back config value
+  //ad7689_config |= 1 << RB;		// don't read back config value
+  ad7689_config |= 0 << RB;		// read back config value
 
   ad7689_config = ad7689_config << 2;   // convert 14 bits to 16 bits
 
+#ifdef DEBUG
+  Serial.println("new configuration:");
+  Serial.print("set INCC: "); Serial.println((conf.INCC_conf & 0b111), BIN);
+  Serial.print("set INx: "); Serial.println((conf.INx_conf & 0b111), BIN);
+  Serial.print("set BW: "); Serial.println(conf.BW_conf, BIN);
+  Serial.print("set REF: "); Serial.println((conf.REF_conf & 0b111), BIN);
+  Serial.print("set SEQ: "); Serial.println((conf.SEQ_conf & 0b11), BIN);
   Serial.print("config value: "); Serial.println(ad7689_config, HEX);
+#endif
+
+  Serial.print("\noriginal:      "); Serial.println(ad7689_config, BIN);
+
+  // DEBUG
+  ad7689_config = 0b1111011100000000;
+  Serial.print("modified:      "); Serial.println(ad7689_config, BIN);
+
 
   pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
 
@@ -217,22 +237,41 @@ void setConfig() {
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
     SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
-    uint16_t val = SPI.transfer(0) << 8;
-    val |= SPI.transfer(0);
+    uint16_t retval = SPI.transfer(0) << 8;
+    retval |= SPI.transfer(0);
     digitalWrite(AD7689_PIN, HIGH);
     delayMicroseconds(AD_DELAY);
     //}
 
+  bool changeset = (ad7689_config == retval);
 
-  // dummy
-  digitalWrite(AD7689_PIN, LOW);
-  SPI.transfer(ad7689_config >> 8);	// high byte
-  SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
-  digitalWrite(AD7689_PIN, HIGH);
-  delayMicroseconds(AD_DELAY);
+
+  // change the readback flag back to 1
+  ad7689_config = ad7689_config | 0x4;
+      //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
+
+  for (uint8_t i = 0; i < 2; i++) {
+    digitalWrite(AD7689_PIN, LOW);
+    SPI.transfer(ad7689_config >> 8);	// high byte
+    SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
+    digitalWrite(AD7689_PIN, HIGH);
+    delayMicroseconds(AD_DELAY);
+}
 
   SPI.endTransaction ();
-  Serial.print("return config: "); Serial.println(val, HEX);
+  Serial.print("return config: "); Serial.println(retval, BIN);
+
+
+
+
+  if (changeset) {
+    Serial.println("success!");
+    return true;
+  } else {
+    Serial.println("failure");
+    return false;
+  }
+
 
 }
 
