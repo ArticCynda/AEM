@@ -53,6 +53,7 @@ void setup ()
   Serial.begin(115200);
   while(!Serial);
 
+  Serial.print("\nCPU speed: "); Serial.println(F_CPU, DEC);
   init(10, 4.096);
 }
 
@@ -80,7 +81,7 @@ static uint8_t AD7689_PIN = 10;		// chip select pin to use (10 is standard)
 // MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
 // use CPHA = CPOL = 0
 // two dummy conversions are required on startup
-SPISettings AD7689_settings (1000000, MSBFIRST, SPI_MODE0); // set SPI clock to 16 MHz
+SPISettings AD7689_settings (250000, MSBFIRST, SPI_MODE0); // set SPI clock to 16 MHz
 
 // last device configuration
 static uint16_t ad7689_config = 0;
@@ -242,24 +243,32 @@ void setConfig() {
     digitalWrite(AD7689_PIN, HIGH);
     //delayMicroseconds(AD_DELAY);
     //}
+  SPI.endTransaction ();
 
   bool changeset = (ad7689_config == retval);
-  delay(100);
 
   // change the readback flag back to 1
   ad7689_config = ad7689_config | 0x4;
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
 
-  for (uint8_t i = 0; i < 2; i++) {
-    delayMicroseconds(AD_DELAY);
+SPI.beginTransaction(AD7689_settings);
+    //delayMicroseconds(AD_DELAY);
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
     SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
     digitalWrite(AD7689_PIN, HIGH);
-    delayMicroseconds(AD_DELAY);
-}
+    //delayMicroseconds(AD_DELAY);
+SPI.endTransaction();
 
-  SPI.endTransaction ();
+SPI.beginTransaction(AD7689_settings);
+    //delayMicroseconds(AD_DELAY);
+    digitalWrite(AD7689_PIN, LOW);
+    SPI.transfer(ad7689_config >> 8);	// high byte
+    SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
+    digitalWrite(AD7689_PIN, HIGH);
+    //delayMicroseconds(AD_DELAY);
+SPI.endTransaction();
+
   //Serial.print("return config: "); Serial.println(retval, HEX);
 
 
