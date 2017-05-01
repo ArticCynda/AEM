@@ -22,6 +22,8 @@
 #define SEQ_SCAN_INPUT_TEMP   0b10
 #define SEQ_SCAN_INPUT        0b11
 
+#define MAX_FREQ              38000000 // 26 ns period @ VDD 5V and VIO 3.3 - 5V
+
 //#define DEBUG
 
 struct AD7689_conf {
@@ -81,7 +83,13 @@ static uint8_t AD7689_PIN = 10;		// chip select pin to use (10 is standard)
 // MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
 // use CPHA = CPOL = 0
 // two dummy conversions are required on startup
-SPISettings AD7689_settings (250000, MSBFIRST, SPI_MODE0); // set SPI clock to 16 MHz
+#if (F_CPU >= MAX_FREQ)
+  SPISettings AD7689_settings (MAX_FREQ, MSBFIRST, SPI_MODE0); // set SPI clock to maximum (38 MHz default)
+#else
+  //SPISettings AD7689_settings (F_CPU, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
+  SPISettings AD7689_settings (1000000, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
+#endif
+
 
 // last device configuration
 static uint16_t ad7689_config = 0;
@@ -181,7 +189,8 @@ void setConfig() {
   #define RB 0
 
   // debug
-  conf.REF_conf = INT_REF_25;
+  //conf.REF_conf = INT_REF_4096;
+  conf.INx_conf = 1;
 
 /*
   // select channel and other config
@@ -221,11 +230,11 @@ void setConfig() {
   Serial.print("config value: "); Serial.println(ad7689_config, HEX);
 #endif
 
-  //Serial.print("\noriginal:      "); Serial.println(ad7689_config, HEX);
+  Serial.print("\noriginal:      "); Serial.println(ad7689_config, BIN);
 
   // DEBUG
-  ad7689_config = 0b1111011100000000;
-  //Serial.print("modified:      "); Serial.println(ad7689_config, HEX);
+  //ad7689_config = 0b1111011100000000;
+  Serial.print("modified:      "); Serial.println(ad7689_config, BIN);
 
 
   pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
@@ -235,6 +244,10 @@ void setConfig() {
   // send config (RAC mode)
   // send twice for dummy conversion
   //for (int i = 0; i < 2; i++) {
+    digitalWrite(AD7689_PIN, LOW);
+    delayMicroseconds(1); // miniumum 10 ns
+    digitalWrite(AD7689_PIN, HIGH);
+    delayMicroseconds(4); // minimum 3.2 µs
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
     SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
@@ -248,9 +261,11 @@ void setConfig() {
   bool changeset = (ad7689_config == retval);
 
   // change the readback flag back to 1
-  ad7689_config = ad7689_config | 0x4;
+  //ad7689_config = ad7689_config | 0x4;
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
+      delayMicroseconds(2); // minumum 1.2µs
 
+      /*
 SPI.beginTransaction(AD7689_settings);
     //delayMicroseconds(AD_DELAY);
     digitalWrite(AD7689_PIN, LOW);
@@ -268,7 +283,7 @@ SPI.beginTransaction(AD7689_settings);
     digitalWrite(AD7689_PIN, HIGH);
     //delayMicroseconds(AD_DELAY);
 SPI.endTransaction();
-
+*/
   //Serial.print("return config: "); Serial.println(retval, HEX);
 
 
@@ -276,6 +291,7 @@ SPI.endTransaction();
 
   if (changeset) {
     Serial.println("success!");
+    Serial.println(retval, HEX);
     return true;
   } else {
     Serial.println("failure");
