@@ -477,8 +477,6 @@ float readTemperature() {
   // configure MUX for temperature sensor
   temp_conf.INCC_conf = INCC_TEMP;
 
-  //temp_conf = getDefaultConfig();
-
   digitalWrite(AD7689_PIN, LOW);
   digitalWrite(AD7689_PIN, HIGH);
   delayMicroseconds(4);
