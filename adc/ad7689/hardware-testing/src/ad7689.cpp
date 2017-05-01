@@ -404,17 +404,22 @@ uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr)
 
   // send config (RAC mode) and acquire data
   SPI.beginTransaction(AD7689_settings);
-  digitalWrite(AD7689_PIN, LOW);
-  uint16_t data = SPI.transfer(command >> 8) << 8;
-  data |= SPI.transfer(command & 0xFF);
+  digitalWrite(AD7689_PIN, LOW); // activate the ADC
 
+  uint16_t data = SPI.transfer(command >> 8) << 8;  // transmit 8 MSB
+  data |= SPI.transfer(command & 0xFF);             // transmit / LSB
+
+  // if a readback is requested, the 16 bit frame is extended with another 16 bits to retrieve the value
   if (readback) {
+    // duplicate previous command
     uint16_t readback_value = SPI.transfer(command >> 8) << 8;
     readback_value |= SPI.transfer(command & 0xFF);
+
+    // return readback value to the calling function
     *rb_cmd_ptr = readback_value;
   }
 
-  digitalWrite(AD7689_PIN, HIGH);
+  digitalWrite(AD7689_PIN, HIGH); // release the ADC
   SPI.endTransaction();
 
   // delay to allow data acquisition for the next cycle
@@ -453,13 +458,13 @@ uint16_t toCommand(AD7689_conf cfg) {
 // returns an ADC confuration loaded with the default settings, for testing purposes
 AD7689_conf getDefaultConfig() {
   AD7689_conf def;
-  def.CFG_conf = false;
-  def.INCC_conf = INCC_UNIPOLAR_REF_GND;
-  def.INx_conf = 0;
-  def.BW_conf = 1;
-  def.REF_conf = INT_REF_4096;
-  def.SEQ_conf = SEQ_OFF;
-  def.RB_conf = false;
+  def.CFG_conf = false;                   // don't update the existing configuration
+  def.INCC_conf = INCC_UNIPOLAR_REF_GND;  // use unipolar inputs, with reference to ground
+  def.INx_conf = 0;                       // read channel 0
+  def.BW_conf = 1;                        // full bandwidth
+  def.REF_conf = INT_REF_4096;            // use interal 4.096V reference voltage
+  def.SEQ_conf = SEQ_OFF;                 // disable sequencer
+  def.RB_conf = false;                    // disable readback
 
   return def;
 }
@@ -482,6 +487,7 @@ bool selftest() {
   // capture readback response
   uint16_t readback;
   shiftTransaction(toCommand(getDefaultConfig()), true, &readback);
-  
+
+  // response with initial readback command
   return (readback == toCommand(rb_conf));
 }
