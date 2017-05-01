@@ -43,6 +43,8 @@ float readVoltage(uint8_t AIN);
 void setConfig();
 void init(uint8_t SSpin, float vref);
 
+static bool init_complete = false;
+
 void setup ()
 {
   // initialize SPI:
@@ -245,11 +247,13 @@ void setConfig() {
   // send twice for dummy conversion
   //for (int i = 0; i < 2; i++) {
 
+if (!init_complete) {
+  digitalWrite(AD7689_PIN, LOW);
+  delayMicroseconds(1); // miniumum 10 ns
+  digitalWrite(AD7689_PIN, HIGH);
+  delayMicroseconds(4); // minimum 3.2 µs
+}
 
-    digitalWrite(AD7689_PIN, LOW);
-    delayMicroseconds(1); // miniumum 10 ns
-    digitalWrite(AD7689_PIN, HIGH);
-    delayMicroseconds(4); // minimum 3.2 µs
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
     SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
@@ -279,13 +283,15 @@ void setConfig() {
 
 
   SPI.beginTransaction(AD7689_settings);
-    digitalWrite(AD7689_PIN, LOW);
+  digitalWrite(AD7689_PIN, LOW);
   uint16_t retval = SPI.transfer(ad7689_config >> 8) << 8;
   retval |= SPI.transfer(ad7689_config & 0xFF);
+  uint16_t retval2 = SPI.transfer(ad7689_config >> 8) << 8;
+  retval2 |= SPI.transfer(ad7689_config & 0xFF);
   digitalWrite(AD7689_PIN, HIGH);
   SPI.endTransaction();
 
-  bool changeset = (change_config == retval);
+  bool changeset = (change_config == retval2);
 
 
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
