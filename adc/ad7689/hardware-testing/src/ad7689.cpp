@@ -45,6 +45,7 @@ float readVoltage(uint8_t AIN);
 void setConfig(void);
 void init(uint8_t SSpin, float vref);
 bool selftest(void);
+float readTemperature(void);
 
 static bool init_complete = false;
 
@@ -67,15 +68,19 @@ void setup ()
 void loop ()
 {
 //  delayMicroseconds(200);
+if (selftest())
+  Serial.println("selftest succeeded!");
+else
+  Serial.println("selftest failed!");
+
   //Serial.println(read_AD7689());            // read value with precise capture time
-  //Serial.print("read channel 0: ");
-//  Serial.println(readVoltage(0));
-  //Serial.print("read channel 2: ");
-  //Serial.println(readVoltage(2));
-  if (selftest())
-    Serial.println("selftest succeeded!");
-  else
-    Serial.println("selftest failed!");
+  Serial.print("read channel 0: ");
+  Serial.println(readVoltage(0));
+  Serial.print("read channel 2: ");
+  Serial.println(readVoltage(2));
+  Serial.print("temp: ");
+  Serial.println(readTemperature());
+
 
   delay(500);
 
@@ -490,4 +495,37 @@ bool selftest() {
 
   // response with initial readback command
   return (readback == toCommand(rb_conf));
+}
+
+// untested -- values seem to be influenced by other ADC channels
+#define TEMP_REF 4.096  // reference voltage to be used for temperature measurement, either 2.5V or 4.096V
+float readTemperature() {
+
+  AD7689_conf temp_conf = getDefaultConfig();
+
+  // set to use internal reference voltage
+  // this automatically turns on the temperature sensor
+  if (TEMP_REF == 2.5)
+    temp_conf.REF_conf = INT_REF_25;
+  else
+    temp_conf.REF_conf = INT_REF_4096;
+
+  // configure MUX for temperature sensor
+  temp_conf.INCC_conf = INCC_TEMP;
+
+  // send the command
+  shiftTransaction(toCommand(temp_conf), false, NULL);
+
+  // skip second frame
+  shiftTransaction(toCommand(getDefaultConfig()), false, NULL);
+
+  // retrieve temperature reading
+  uint16_t t = shiftTransaction(toCommand(getDefaultConfig()), false, NULL);
+
+  Serial.print("temp ADC out: "); Serial.println(t, DEC);
+
+  // calculate temperature from ADC value:
+  // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
+  float temp = 25 + ((t * TEMP_REF / 65536)- 0.283) * 0.001;
+  return temp;
 }
