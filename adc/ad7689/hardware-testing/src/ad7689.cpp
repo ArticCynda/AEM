@@ -244,6 +244,8 @@ void setConfig() {
   // send config (RAC mode)
   // send twice for dummy conversion
   //for (int i = 0; i < 2; i++) {
+
+
     digitalWrite(AD7689_PIN, LOW);
     delayMicroseconds(1); // miniumum 10 ns
     digitalWrite(AD7689_PIN, HIGH);
@@ -251,21 +253,45 @@ void setConfig() {
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
     SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
-    uint16_t retval = SPI.transfer(0xFF) << 8;
-    retval |= SPI.transfer(0xFF);
+
     digitalWrite(AD7689_PIN, HIGH);
+    SPI.endTransaction();
+    //digitalWrite(AD7689_PIN, LOW);
+    //delayMicroseconds(1);
+
+    delayMicroseconds(4);
+
+
+    // change the readback flag back to 1
+    uint16_t change_config = ad7689_config;
+    ad7689_config = ad7689_config | 0x4;
+
+    SPI.beginTransaction(AD7689_settings);
+    digitalWrite(AD7689_PIN, LOW);
+    SPI.transfer(ad7689_config >> 8);
+    SPI.transfer(ad7689_config & 0xFF);
+    digitalWrite(AD7689_PIN, HIGH);
+    SPI.endTransaction ();
     //delayMicroseconds(AD_DELAY);
     //}
-  SPI.endTransaction ();
 
-  bool changeset = (ad7689_config == retval);
+  delayMicroseconds(4);
 
-  // change the readback flag back to 1
-  //ad7689_config = ad7689_config | 0x4;
+
+  SPI.beginTransaction(AD7689_settings);
+    digitalWrite(AD7689_PIN, LOW);
+  uint16_t retval = SPI.transfer(ad7689_config >> 8) << 8;
+  retval |= SPI.transfer(ad7689_config & 0xFF);
+  digitalWrite(AD7689_PIN, HIGH);
+  SPI.endTransaction();
+
+  bool changeset = (change_config == retval);
+
+
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
       delayMicroseconds(2); // minumum 1.2µs
 
-      /*
+/*
 SPI.beginTransaction(AD7689_settings);
     //delayMicroseconds(AD_DELAY);
     digitalWrite(AD7689_PIN, LOW);
@@ -284,7 +310,7 @@ SPI.beginTransaction(AD7689_settings);
     //delayMicroseconds(AD_DELAY);
 SPI.endTransaction();
 */
-  //Serial.print("return config: "); Serial.println(retval, HEX);
+  Serial.print("return config: "); Serial.println(retval, BIN);
 
 
 
@@ -309,7 +335,7 @@ SPI.endTransaction();
 
 uint16_t read_AD7689 ()
 {
-
+/*
   // do conversion
   digitalWrite(AD7689_PIN, LOW);         // chip select
   digitalWrite(AD7689_PIN, HIGH);        // chip deselect  (starts conversion)
@@ -326,6 +352,8 @@ uint16_t read_AD7689 ()
 
   //Serial.print("read: "); Serial.println(val, HEX);
   return val;
+  */
+  return 1;
 }
 
 float readVoltage(uint8_t AIN) {
