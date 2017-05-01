@@ -61,28 +61,30 @@ void setup ()
   Serial.begin(115200);
   while(!Serial);
 
-  Serial.print("\nCPU speed: "); Serial.println(F_CPU, DEC);
-  init(10, 4.096);
+  //Serial.print("\nCPU speed: "); Serial.println(F_CPU, DEC);
+  //init(10, 4.096);
 }
 
 void loop ()
 {
 //  delayMicroseconds(200);
+/*
 if (selftest())
   Serial.println("selftest succeeded!");
 else
   Serial.println("selftest failed!");
+  */
 
   //Serial.println(read_AD7689());            // read value with precise capture time
-  Serial.print("read channel 0: ");
-  Serial.println(readVoltage(0));
-  Serial.print("read channel 2: ");
-  Serial.println(readVoltage(2));
+  //Serial.print("read channel 0: ");
+  //Serial.println(readVoltage(0));
+//  Serial.print("read channel 2: ");
+  //Serial.println(readVoltage(2));
   Serial.print("temp: ");
   Serial.println(readTemperature());
 
 
-  delay(500);
+  //delay(5);
 
 } // loop()
 
@@ -112,6 +114,7 @@ static uint16_t ad7689_config = 0;
 void init(uint8_t SSpin, float ref) {
   AD7689_PIN = SSpin;
 
+/*
   // initialize ADC with default values
   conf.INCC_conf = INCC_UNIPOLAR_REF_GND; // default to single ended reference to ground
   conf.INx_conf = 0; // default to reading channel 0
@@ -131,6 +134,7 @@ void init(uint8_t SSpin, float ref) {
     conf.REF_conf = EXT_REF_TEMP_BUF;
   }
   conf.REF_voltage = ref;
+  */
 
 #ifdef DEBUG
   Serial.print("REF: "); Serial.println(conf.REF_conf, HEX);
@@ -138,7 +142,7 @@ void init(uint8_t SSpin, float ref) {
 #endif
 
 
-  setConfig();
+  //setConfig();
 }
 /*
 void set_AD7689 (uint8_t channel) {
@@ -192,6 +196,7 @@ void set_AD7689 (uint8_t channel) {
 }
 */
 //void setConfig(uint8_t chconf, uint8_t channel, bool bandwidth, uint8_t refsource, uint8_t sequencer) {
+/*
 void setConfig() {
 
   // bit shifts needed for config register values, from datasheet p. 27 table 11:
@@ -207,19 +212,7 @@ void setConfig() {
   //conf.REF_conf = INT_REF_4096;
   //conf.INx_conf = 0;
 
-/*
-  // select channel and other config
-  ad7689_config = 0;
-  ad7689_config |= 1 << CFG;		// update config on chip
-  ad7689_config |= (chconf & 0b111) << INCC;	// mode - single ended, differential, ref, etc
-  ad7689_config |= (channel & 0b111) << INx;	// channel
-  ad7689_config |= bandwidth << BW;		// 1 adds more filtering
-  ad7689_config |= (refsource & 0b111) << REF; // internal 4.096V reference
-  //ad7689_config |= 0B0 << REF;	// use internal 2.5V reference
-  //ad7689_config |= 0B110 << REF;	// use external reference (maybe ~3.3V)
-  ad7689_config |= (sequencer & 0b11) << SEQ;		// don't auto sequence
-  ad7689_config |= 0 << RB;		// don't read back config value
-  */
+
   // select channel and other config
   ad7689_config = 0;
   ad7689_config |= 1 << CFG;		// update config on chip
@@ -260,15 +253,6 @@ void setConfig() {
   // send twice for dummy conversion
   //for (int i = 0; i < 2; i++) {
 
-/*
-if (!init_complete) {
-  digitalWrite(AD7689_PIN, LOW);
-  delayMicroseconds(1); // miniumum 10 ns
-  digitalWrite(AD7689_PIN, HIGH);
-  delayMicroseconds(4); // minimum 3.2 µs
-  init_complete = true;
-}
-*/
 
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
@@ -313,25 +297,6 @@ if (!init_complete) {
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
       delayMicroseconds(2); // minumum 1.2µs
 
-/*
-SPI.beginTransaction(AD7689_settings);
-    //delayMicroseconds(AD_DELAY);
-    digitalWrite(AD7689_PIN, LOW);
-    SPI.transfer(ad7689_config >> 8);	// high byte
-    SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
-    digitalWrite(AD7689_PIN, HIGH);
-    //delayMicroseconds(AD_DELAY);
-SPI.endTransaction();
-
-SPI.beginTransaction(AD7689_settings);
-    //delayMicroseconds(AD_DELAY);
-    digitalWrite(AD7689_PIN, LOW);
-    SPI.transfer(ad7689_config >> 8);	// high byte
-    SPI.transfer(ad7689_config & 0xFF);	// low byte, 2 bits ignored
-    digitalWrite(AD7689_PIN, HIGH);
-    //delayMicroseconds(AD_DELAY);
-SPI.endTransaction();
-*/
   //Serial.print("return config: "); Serial.println(retval, BIN);
 
 
@@ -347,7 +312,7 @@ SPI.endTransaction();
   }
 
 
-}
+}*/
 
 // do conversion and return result
 // assume that the channel is already set correctly
@@ -511,6 +476,12 @@ float readTemperature() {
 
   // configure MUX for temperature sensor
   temp_conf.INCC_conf = INCC_TEMP;
+
+  //temp_conf = getDefaultConfig();
+
+  digitalWrite(AD7689_PIN, LOW);
+  digitalWrite(AD7689_PIN, HIGH);
+  delayMicroseconds(4);
 
   // send the command
   shiftTransaction(toCommand(temp_conf), false, NULL);
