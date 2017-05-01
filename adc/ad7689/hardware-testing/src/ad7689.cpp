@@ -27,12 +27,14 @@
 //#define DEBUG
 
 struct AD7689_conf {
+  bool    CFG_conf;
   uint8_t INCC_conf;
   uint8_t INx_conf;
   uint8_t BW_conf;
   uint8_t REF_conf;
   uint8_t SEQ_conf;
   float   REF_voltage;
+  bool    RB_conf;
 };
 
 AD7689_conf conf;
@@ -192,7 +194,7 @@ void setConfig() {
 
   // debug
   //conf.REF_conf = INT_REF_4096;
-  conf.INx_conf = 1;
+  //conf.INx_conf = 0;
 
 /*
   // select channel and other config
@@ -232,11 +234,11 @@ void setConfig() {
   Serial.print("config value: "); Serial.println(ad7689_config, HEX);
 #endif
 
-  Serial.print("\noriginal:      "); Serial.println(ad7689_config, BIN);
+  //Serial.print("\noriginal:      "); Serial.println(ad7689_config, BIN);
 
   // DEBUG
   //ad7689_config = 0b1111011100000000;
-  Serial.print("modified:      "); Serial.println(ad7689_config, BIN);
+  //Serial.print("modified:      "); Serial.println(ad7689_config, BIN);
 
 
   pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
@@ -252,6 +254,7 @@ if (!init_complete) {
   delayMicroseconds(1); // miniumum 10 ns
   digitalWrite(AD7689_PIN, HIGH);
   delayMicroseconds(4); // minimum 3.2 µs
+  init_complete = true;
 }
 
     digitalWrite(AD7689_PIN, LOW);
@@ -316,7 +319,7 @@ SPI.beginTransaction(AD7689_settings);
     //delayMicroseconds(AD_DELAY);
 SPI.endTransaction();
 */
-  Serial.print("return config: "); Serial.println(retval, BIN);
+  //Serial.print("return config: "); Serial.println(retval, BIN);
 
 
 
@@ -341,7 +344,7 @@ SPI.endTransaction();
 
 uint16_t read_AD7689 ()
 {
-/*
+
   // do conversion
   digitalWrite(AD7689_PIN, LOW);         // chip select
   digitalWrite(AD7689_PIN, HIGH);        // chip deselect  (starts conversion)
@@ -358,8 +361,8 @@ uint16_t read_AD7689 ()
 
   //Serial.print("read: "); Serial.println(val, HEX);
   return val;
-  */
-  return 1;
+
+  //return 1;
 }
 
 float readVoltage(uint8_t AIN) {
