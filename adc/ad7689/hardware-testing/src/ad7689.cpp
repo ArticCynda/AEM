@@ -40,10 +40,11 @@ struct AD7689_conf {
 AD7689_conf conf;
 
 //void set_AD7689 (uint8_t);
-uint16_t read_AD7689 ();
+uint16_t read_AD7689 (void);
 float readVoltage(uint8_t AIN);
-void setConfig();
+void setConfig(void);
 void init(uint8_t SSpin, float vref);
+bool selftest(void);
 
 static bool init_complete = false;
 
@@ -67,11 +68,16 @@ void loop ()
 {
 //  delayMicroseconds(200);
   //Serial.println(read_AD7689());            // read value with precise capture time
-  Serial.print("read channel 0: ");
-  Serial.println(readVoltage(0));
-  Serial.print("read channel 2: ");
-  Serial.println(readVoltage(2));
-  delay(50);
+  //Serial.print("read channel 0: ");
+//  Serial.println(readVoltage(0));
+  //Serial.print("read channel 2: ");
+  //Serial.println(readVoltage(2));
+  if (selftest())
+    Serial.println("selftest succeeded!");
+  else
+    Serial.println("selftest failed!");
+
+  delay(500);
 
 } // loop()
 
@@ -81,7 +87,7 @@ void loop ()
 // AD7689 16 bit SPI A/D converter interface
 // Supports highly accurate sample time
 static uint8_t AD7689_PIN = 10;		// chip select pin to use (10 is standard)
-#define AD_DELAY   6    // delay from datasheet, default 6 µs
+#define AD_DELAY   4    // delay from datasheet, default 6 µs
 
 // set up the speed, mode and endianness of each device
 // MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
@@ -249,6 +255,7 @@ void setConfig() {
   // send twice for dummy conversion
   //for (int i = 0; i < 2; i++) {
 
+/*
 if (!init_complete) {
   digitalWrite(AD7689_PIN, LOW);
   delayMicroseconds(1); // miniumum 10 ns
@@ -256,6 +263,7 @@ if (!init_complete) {
   delayMicroseconds(4); // minimum 3.2 µs
   init_complete = true;
 }
+*/
 
     digitalWrite(AD7689_PIN, LOW);
     SPI.transfer(ad7689_config >> 8);	// high byte
@@ -372,4 +380,108 @@ float readVoltage(uint8_t AIN) {
     setConfig();
   }
   return (read_AD7689() * conf.REF_voltage / 65536);
+}
+
+uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr) {
+
+  // one time start-up sequence
+  if (!init_complete) {
+    // give ADC time to start up
+    delay(100);
+
+    // synchronize start of conversion
+    digitalWrite(AD7689_PIN, LOW);
+    delayMicroseconds(1); // miniumum 10 ns
+    digitalWrite(AD7689_PIN, HIGH);
+    delayMicroseconds(4); // minimum 3.2 µs
+    init_complete = true;
+  }
+
+  pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
+
+  // allow time to sample
+  delayMicroseconds(4);
+
+  // send config (RAC mode) and acquire data
+  SPI.beginTransaction(AD7689_settings);
+  digitalWrite(AD7689_PIN, LOW);
+  uint16_t data = SPI.transfer(command >> 8) << 8;
+  data |= SPI.transfer(command & 0xFF);
+
+  if (readback) {
+    uint16_t readback_value = SPI.transfer(command >> 8) << 8;
+    readback_value |= SPI.transfer(command & 0xFF);
+    *rb_cmd_ptr = readback_value;
+  }
+
+  digitalWrite(AD7689_PIN, HIGH);
+  SPI.endTransaction();
+
+  // delay to allow data acquisition for the next cycle
+  delayMicroseconds(2); // minumum 1.2µs
+
+  return data;
+}
+
+uint16_t toCommand(AD7689_conf cfg) {
+
+  // bit shifts needed for config register values, from datasheet p. 27 table 11:
+  #define CFG 13
+  #define INCC 10
+  #define INx 7
+  #define BW  6
+  #define REF 3
+  #define SEQ 1
+  #define RB 0
+
+  // build 14 bit configuration word
+  uint16_t command = 0;
+  command |= cfg.CFG_conf << CFG;		// update config on chip
+  command |= (cfg.INCC_conf & 0b111) << INCC;	// mode - single ended, differential, ref, etc
+  command |= (cfg.INx_conf & 0b111) << INx;	// channel
+  command |= cfg.BW_conf << BW;		// 1 adds more filtering
+  command |= (cfg.REF_conf & 0b111) << REF; // internal 4.096V reference
+  command |= (cfg.SEQ_conf & 0b11) << SEQ;		// don't auto sequence
+  command |= !(cfg.RB_conf) << RB;		// read back config value
+
+  // convert 14 bits to 16 bits, 2 LSB are don't cares
+  command = command << 2;
+
+  return command;
+}
+
+// returns an ADC confuration loaded with the default settings, for testing purposes
+AD7689_conf getDefaultConfig() {
+  AD7689_conf def;
+  def.CFG_conf = false;
+  def.INCC_conf = INCC_UNIPOLAR_REF_GND;
+  def.INx_conf = 0;
+  def.BW_conf = 1;
+  def.REF_conf = INT_REF_4096;
+  def.SEQ_conf = SEQ_OFF;
+  def.RB_conf = false;
+
+  return def;
+}
+
+// returns a value indicating if the ADC is properly connected and responding
+bool selftest() {
+  // ADC will be tested with its readback function, which reads back a previous command
+  // this process takes 3 cycles
+
+  AD7689_conf rb_conf = getDefaultConfig();
+  rb_conf.CFG_conf = true;   // overwrite previous configuration
+  rb_conf.RB_conf = true;    // enable readback
+
+  // send readback command
+  shiftTransaction(toCommand(rb_conf), false, NULL);
+
+  // skip second frame
+  shiftTransaction(toCommand(getDefaultConfig()), false, NULL);
+
+  // capture readback response
+  uint16_t readback;
+  shiftTransaction(toCommand(getDefaultConfig()), true, &readback);
+  
+  return (readback == toCommand(rb_conf));
 }
