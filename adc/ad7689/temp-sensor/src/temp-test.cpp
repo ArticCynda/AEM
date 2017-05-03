@@ -1,3 +1,10 @@
+/* SUMMARY
+   Code for temperature measurement using the ADCs internal temperature sensor
+   Binary values range from ca. 4230 at room temperature to over 4400 when heated, indicating temperature sensitivity
+   However, conversion function to °C as documented in the datasheet doesn't work accurately
+   Accurate temperature measurements require calibration
+*/
+
 #include <SPI.h>		// include the new SPI library:
 
 // input configuration: bipolar/unipolar, single ended or differential
@@ -68,12 +75,12 @@ void setup ()
 void loop ()
 {
 //  delayMicroseconds(200);
-/*
+
 if (selftest())
   Serial.println("selftest succeeded!");
 else
   Serial.println("selftest failed!");
-  */
+
 
   //Serial.println(read_AD7689());            // read value with precise capture time
   //Serial.print("read channel 0: ");
@@ -320,6 +327,7 @@ void setConfig() {
 
 //inline uint16_t read_AD7689() __attribute__((always_inline));
 
+/*
 uint16_t read_AD7689 ()
 {
 
@@ -342,7 +350,9 @@ uint16_t read_AD7689 ()
 
   //return 1;
 }
+*/
 
+/*
 float readVoltage(uint8_t AIN) {
   if (AIN != conf.INx_conf) {
     // reading from another channel, reconfigure the ADC
@@ -351,7 +361,12 @@ float readVoltage(uint8_t AIN) {
   }
   return (read_AD7689() * conf.REF_voltage / 65536);
 }
+*/
 
+/* sends a 16 bit word to the ADC, and simultaneously captures the response
+   ADC responses lag 2 frames behind on commands
+   if readback is activated, 32 bits will be captured instead of 16
+*/
 uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr) {
 
   // one time start-up sequence
@@ -398,6 +413,7 @@ uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr)
   return data;
 }
 
+// converts a command structure to a 16 bit word that can be transmitted over SPI
 uint16_t toCommand(AD7689_conf cfg) {
 
   // bit shifts needed for config register values, from datasheet p. 27 table 11:
@@ -461,7 +477,9 @@ bool selftest() {
   return (readback == toCommand(rb_conf));
 }
 
-// untested -- values seem to be influenced by other ADC channels
+// preliminary test results:
+// raw values range from 4260 at room temperature to over 4400 when heated
+// need calibration with ice cubes (= 0°C) and boiling methanol (= 64.7°C) or boiling ether (= 34.6°C)
 #define TEMP_REF 4.096  // reference voltage to be used for temperature measurement, either 2.5V or 4.096V
 float readTemperature() {
 
@@ -495,5 +513,9 @@ float readTemperature() {
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
   float temp = 25 + ((t * TEMP_REF / 65536)- 0.283) * 0.001;
+  /* WARNING
+  Formula derived from datasheet, data requires more thorough calibration
+  */
+
   return temp;
 }
