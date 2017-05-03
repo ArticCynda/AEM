@@ -295,8 +295,8 @@ void setConfig() {
     // skip a frame
     SPI.beginTransaction(AD7689_settings);
     digitalWrite(AD7689_PIN, LOW);
-    SPI.transfer(4);
-    SPI.transfer(4);
+    SPI.transfer(0);
+    SPI.transfer(0);
     digitalWrite(AD7689_PIN, HIGH);
     SPI.endTransaction ();
     //delayMicroseconds(AD_DELAY);
@@ -314,8 +314,8 @@ void setConfig() {
 
   SPI.beginTransaction(AD7689_settings);
   digitalWrite(AD7689_PIN, LOW);
-  uint16_t retval = SPI.transfer(4) << 8;
-  retval |= SPI.transfer(4);
+  uint16_t retval = SPI.transfer(0) << 8;
+  retval |= SPI.transfer(0);
   channels[ch] = retval;
   digitalWrite(AD7689_PIN, HIGH);
   SPI.endTransaction();
@@ -329,8 +329,9 @@ void setConfig() {
   //Serial.print("return config: "); Serial.println(retval, BIN);
   }
 
+  Serial.println();
   for (uint8_t ch = 0; ch < 8; ch++) {
-    Serial.print("Channel "); Serial.print(ch, DEC); Serial.print(": "); Serial.println(channels[ch], DEC);
+    Serial.print("Channel "); Serial.print(ch, DEC); Serial.print(": "); Serial.println((float)channels[ch] * 4.096 / 65536, DEC);
   }
 
 /*
