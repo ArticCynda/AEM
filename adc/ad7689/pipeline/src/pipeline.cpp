@@ -28,6 +28,10 @@
 
 #define MAX_FREQ              38000000 // 26 ns period @ VDD 5V and VIO 3.3 - 5V
 
+#define UNIPOLAR_MODE         0
+#define BIPOLAR_MODE          1
+#define DIFFERENTIAL_MODE     2
+
 //#define DEBUG
 
 struct AD7689_conf {
@@ -52,6 +56,9 @@ bool selftest(void);
 AD7689_conf getDefaultConfig(void);
 uint16_t toCommand(AD7689_conf);
 float readTemperature(void);
+void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp);
+void configureSequencer(AD7689_conf);
+uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr) __attribute__((always_inline));
 
 static bool init_complete = false;
 
@@ -118,10 +125,13 @@ static uint8_t AD7689_PIN = 10;		// chip select pin to use (10 is standard)
 
 
 // last device configuration
-static uint16_t ad7689_config = 0;
+//static uint16_t ad7689_config = 0;
+
+
 
 void init(uint8_t SSpin, float ref) {
   AD7689_PIN = SSpin;
+  pinMode(SSpin, OUTPUT);
 
 /*
   // initialize ADC with default values
@@ -208,16 +218,21 @@ void set_AD7689 (uint8_t channel) {
 
 //void setConfig(uint8_t chconf, uint8_t channel, bool bandwidth, uint8_t refsource, uint8_t sequencer) {
 
+//static uint16_t data[8];
+//static uint16_t temperature;
+
+
+
 void setConfig() {
 
   // bit shifts needed for config register values, from datasheet p. 27 table 11:
-  #define CFG 13
-  #define INCC 10
-  #define INx 7
-  #define BW  6
-  #define REF 3
-  #define SEQ 1
-  #define RB 0
+  //#define CFG 13
+  //#define INCC 10
+  //#define INx 7
+  //#define BW  6
+  //#define REF 3
+  //#define SEQ 1
+  //#define RB 0
 
   // debug
   //conf.REF_conf = INT_REF_4096;
@@ -228,6 +243,8 @@ void setConfig() {
   conf.INx_conf = 7; // read all channels from IN0 up to IN7
   conf.SEQ_conf = SEQ_SCAN_INPUT_TEMP; // scan all inputs sequentially
   conf.RB_conf = false; // don't read back
+
+  configureSequencer(conf);
 
 /*
   // select channel and other config
@@ -245,7 +262,7 @@ void setConfig() {
 
   ad7689_config = ad7689_config << 2;   // convert 14 bits to 16 bits
   */
-  ad7689_config = toCommand(conf);
+  //ad7689_config = toCommand(conf);
 
 #ifdef DEBUG
   Serial.println("new configuration:");
@@ -263,7 +280,7 @@ void setConfig() {
   //ad7689_config = 0b1111011100000000;
   //Serial.print("modified:      "); Serial.println(ad7689_config, BIN);
 
-
+/*
   pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
 
   SPI.beginTransaction(AD7689_settings);
@@ -303,11 +320,27 @@ void setConfig() {
     //}
 
   delayMicroseconds(4);
+  */
 
   uint16_t channels[8];
   for (uint8_t i = 0; i < (sizeof(channels) / sizeof(channels[0])); i++)
     channels[i] = 0;
 
+  uint16_t temp;
+
+  for (int i = 0; i < 4; i++) {
+    readChannels(8, UNIPOLAR_MODE, &channels[0], &temp);
+
+    Serial.println();
+    for (uint8_t ch = 0; ch < 8; ch++) {
+      Serial.print("Channel "); Serial.print(ch, DEC); Serial.print(": "); Serial.println((float)channels[ch] * 4.096 / 65536, DEC);
+    }
+    Serial.print("temp: "); Serial.println(temp, DEC);
+  }
+
+
+
+/*
   for (uint8_t ch = 0; ch < 8; ch++) {
 
 
@@ -328,12 +361,9 @@ void setConfig() {
 
   //Serial.print("return config: "); Serial.println(retval, BIN);
   }
+*/
 
-  Serial.println();
-  for (uint8_t ch = 0; ch < 8; ch++) {
-    Serial.print("Channel "); Serial.print(ch, DEC); Serial.print(": "); Serial.println((float)channels[ch] * 4.096 / 65536, DEC);
-  }
-
+/*
   SPI.beginTransaction(AD7689_settings);
   digitalWrite(AD7689_PIN, LOW);
   uint16_t temp = SPI.transfer(0) << 8;
@@ -341,12 +371,12 @@ void setConfig() {
   digitalWrite(AD7689_PIN, HIGH);
   SPI.endTransaction();
   Serial.print("temp: "); Serial.println(temp, DEC);
-
+*/
   //bool changeset = (change_config == retval2);
 
   //pinMode(MOSI, OUTPUT);
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
-  delayMicroseconds(2); // minumum 1.2µs
+  //delayMicroseconds(2); // minumum 1.2µs
 
 /*
   if (changeset) {
@@ -359,6 +389,52 @@ void setConfig() {
   }
 */
 
+}
+
+void configureSequencer(AD7689_conf sequence) {
+
+  // turn on sequencer if it hasn't been turned on yet, and set it to read temperature too
+  sequence.SEQ_conf = SEQ_SCAN_INPUT_TEMP;
+  // disable readback
+  sequence.RB_conf = false;
+  // overwrite existing command
+  sequence.CFG_conf = true;
+
+  // convert ADC configuration to command word
+  uint16_t command = toCommand(sequence);
+
+  // send command to configure ADC and enable sequencer
+  shiftTransaction(command, false, NULL);;
+
+  // skip a frame
+  shiftTransaction(0, false, NULL);
+}
+
+// reads voltages from selected channels, always read temperature too
+// params:
+//   channels: last channel to read (starting at 0, max 7, in differential mode always read even number of channels)
+//   mode: unipolar, bipolar or differential
+//   data: pointer to a vector holding the data, length depending on channels and mode
+//   temp: pointer to a variable holding the temperature
+void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp) {
+
+  uint8_t scans = channels; // unipolar mode default
+  if (mode == DIFFERENTIAL_MODE) {
+    scans = channels / 2;
+    if ((channels % 2) > 0)
+      scans++;
+  }
+
+  // read as many values as there are ADC channels active
+  // when reading differential, only half the number of channels will be read
+  for (uint8_t ch = 0; ch < scans; ch++) {
+    uint16_t retval = shiftTransaction(0, false, NULL);
+    *(data + ch) = retval;
+  }
+
+  // capture temperature too
+  uint16_t t = shiftTransaction(0, false, NULL);
+  *temp = t;
 }
 
 // do conversion and return result
@@ -407,7 +483,7 @@ float readVoltage(uint8_t AIN) {
    ADC responses lag 2 frames behind on commands
    if readback is activated, 32 bits will be captured instead of 16
 */
-/*
+
 uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr) {
 
   // one time start-up sequence
@@ -423,7 +499,7 @@ uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr)
     init_complete = true;
   }
 
-  pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
+  //pinMode(AD7689_PIN, OUTPUT);      // set the Slave Select Pin as output
 
   // allow time to sample
   delayMicroseconds(4);
@@ -453,7 +529,7 @@ uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr)
 
   return data;
 }
-*/
+
 // converts a command structure to a 16 bit word that can be transmitted over SPI
 uint16_t toCommand(AD7689_conf cfg) {
 
