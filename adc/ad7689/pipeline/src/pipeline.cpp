@@ -75,11 +75,12 @@ void loop ()
 {
 //  delayMicroseconds(200);
 
+/*
 if (selftest())
   Serial.println("selftest succeeded!");
 else
   Serial.println("selftest failed!");
-
+*/
   setConfig();
 
 
@@ -281,7 +282,8 @@ void setConfig() {
     //digitalWrite(AD7689_PIN, LOW);
     //delayMicroseconds(1);
 
-    digitalWrite(MOSI, LOW); // keep MOSI low
+    //digitalWrite(MOSI, LOW); // keep MOSI low
+    //pinMode(MOSI, INPUT);
 
     delayMicroseconds(4);
 
@@ -293,8 +295,8 @@ void setConfig() {
     // skip a frame
     SPI.beginTransaction(AD7689_settings);
     digitalWrite(AD7689_PIN, LOW);
-    SPI.transfer(ad7689_config >> 8);
-    SPI.transfer(ad7689_config & 0xFF);
+    SPI.transfer(4);
+    SPI.transfer(4);
     digitalWrite(AD7689_PIN, HIGH);
     SPI.endTransaction ();
     //delayMicroseconds(AD_DELAY);
@@ -312,15 +314,15 @@ void setConfig() {
 
   SPI.beginTransaction(AD7689_settings);
   digitalWrite(AD7689_PIN, LOW);
-  uint16_t retval = SPI.transfer(ad7689_config >> 8) << 8;
-  retval |= SPI.transfer(ad7689_config & 0xFF);
+  uint16_t retval = SPI.transfer(4) << 8;
+  retval |= SPI.transfer(4);
   channels[ch] = retval;
   digitalWrite(AD7689_PIN, HIGH);
   SPI.endTransaction();
 
   //bool changeset = (change_config == retval2);
 
-
+  //pinMode(MOSI, OUTPUT);
       //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
       delayMicroseconds(2); // minumum 1.2µs
 
@@ -390,6 +392,7 @@ float readVoltage(uint8_t AIN) {
    ADC responses lag 2 frames behind on commands
    if readback is activated, 32 bits will be captured instead of 16
 */
+/*
 uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr) {
 
   // one time start-up sequence
@@ -435,7 +438,7 @@ uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr)
 
   return data;
 }
-
+*/
 // converts a command structure to a 16 bit word that can be transmitted over SPI
 uint16_t toCommand(AD7689_conf cfg) {
 
@@ -477,7 +480,7 @@ AD7689_conf getDefaultConfig() {
 
   return def;
 }
-
+/*
 // returns a value indicating if the ADC is properly connected and responding
 bool selftest() {
   // ADC will be tested with its readback function, which reads back a previous command
@@ -499,7 +502,7 @@ bool selftest() {
   // response with initial readback command
   return (readback == toCommand(rb_conf));
 }
-
+*/
 // preliminary test results:
 // raw values range from 4260 at room temperature to over 4400 when heated
 // need calibration with ice cubes (= 0°C) and boiling methanol (= 64.7°C) or boiling ether (= 34.6°C)
