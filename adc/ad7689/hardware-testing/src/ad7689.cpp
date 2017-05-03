@@ -1,3 +1,9 @@
+/* SUMMARY
+   SPI communication engine for AD7689 with debugging code.
+   For temperature sensing, see temp-sensor project
+   For ring buffer implementation for data management, see pipeline project
+*/
+
 #include <SPI.h>		// include the new SPI library:
 
 // input configuration: bipolar/unipolar, single ended or differential
