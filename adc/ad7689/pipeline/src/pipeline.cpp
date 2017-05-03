@@ -226,7 +226,7 @@ void setConfig() {
   conf = getDefaultConfig();
   conf.INCC_conf = INCC_UNIPOLAR_REF_GND;
   conf.INx_conf = 7; // read all channels from IN0 up to IN7
-  conf.SEQ_conf = SEQ_SCAN_INPUT; // scan all inputs sequentially
+  conf.SEQ_conf = SEQ_SCAN_INPUT_TEMP; // scan all inputs sequentially
   conf.RB_conf = false; // don't read back
 
 /*
@@ -333,6 +333,20 @@ void setConfig() {
   for (uint8_t ch = 0; ch < 8; ch++) {
     Serial.print("Channel "); Serial.print(ch, DEC); Serial.print(": "); Serial.println((float)channels[ch] * 4.096 / 65536, DEC);
   }
+
+  SPI.beginTransaction(AD7689_settings);
+  digitalWrite(AD7689_PIN, LOW);
+  uint16_t temp = SPI.transfer(0) << 8;
+  temp |= SPI.transfer(0);
+  digitalWrite(AD7689_PIN, HIGH);
+  SPI.endTransaction();
+  Serial.print("temp: "); Serial.println(temp, DEC);
+
+  //bool changeset = (change_config == retval2);
+
+  //pinMode(MOSI, OUTPUT);
+      //Serial.print("disabled:      "); Serial.println(ad7689_config, BIN);
+  delayMicroseconds(2); // minumum 1.2µs
 
 /*
   if (changeset) {
