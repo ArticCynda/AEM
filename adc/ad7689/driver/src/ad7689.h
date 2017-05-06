@@ -42,6 +42,24 @@
 #define REF_GND               (2)
 #define REF_COM               (3)
 
+// bit shifts needed for config register values, from datasheet p. 27 table 11:
+#define CFG                   (13)
+#define INCC                  (10)
+#define INx                   (7)
+#define BW                    (6)
+#define REF                   (3)
+#define SEQ                   (1)
+#define RB                    (0)
+
+#define TEMP_REF              (4.096)  // reference voltage to be used for temperature measurement, either 2.5V or 4.096V
+#define BASE_TEMP             (25)
+#define TEMP_BASE_VOLTAGE     (0.283)
+#define TEMP_RICO             (0.001)
+#define INTERNAL_25           (2.5)
+#define INTERNAL_4096         (4.096)
+#define TOTAL_CHANNELS        (8)
+#define TOTAL_STEPS           (65536)
+
 //#define DEBUG
 
 struct AD7689_conf {
@@ -59,12 +77,14 @@ struct AD7689_conf {
 // MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
 // use CPHA = CPOL = 0
 // two dummy conversions are required on startup
+/*
 #if (F_CPU >= MAX_FREQ)
   SPISettings AD7689_settings (MAX_FREQ, MSBFIRST, SPI_MODE0); // set SPI clock to maximum (38 MHz default)
 #else
   //SPISettings AD7689_settings (F_CPU, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
   SPISettings AD7689_settings (1000000, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
 #endif
+*/
 
 //AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref);
 
@@ -73,7 +93,7 @@ class AD7689 {
     AD7689_conf conf;
     bool init_complete = false;
 
-    //const SPISettings AD7689_settings;
+    const SPISettings AD7689_settings;
 
     // Supports highly accurate sample time
     uint8_t AD7689_PIN;		// chip select pin to use (10 is standard)

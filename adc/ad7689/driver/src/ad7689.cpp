@@ -50,12 +50,12 @@ void AD7689::setReference(uint8_t refSource, float posRef, uint8_t polarity, boo
     // set positive reference
     if (refSource == REF_INTERNAL)
     {
-      if (posRef == 2.5)
+      if (posRef == INTERNAL_25)
         refsrc = INT_REF_25;
-      else if (posRef == 4.096)
+      else if (posRef == INTERNAL_4096)
         refsrc = INT_REF_4096;
       else {
-        posref = 4.096;
+        posref = INTERNAL_4096;
         refsrc = INT_REF_4096; // default to 4.096V internal voltage reference
       }
     } else { // external reference
@@ -92,14 +92,14 @@ float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
 
 // convert sample to voltage
 float AD7689::calculateVoltage(uint16_t sample, float posRef, float negRef) {
-  return (sample * (posRef - negRef) / 65536);
+  return (sample * (posRef - negRef) / TOTAL_STEPS);
 }
 
 // convert sample to temperature
 float AD7689::calculateTemp(uint16_t temp) {
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
-  return 25 + ((temp * posref / 65536)- 0.283) * 0.001;
+  return BASE_TEMP + ((temp * posref / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
 
 }
 
@@ -112,7 +112,7 @@ float AD7689::acquireTemperature() {
 }
 
 // constructor, intialize SPI and set SS pin
-AD7689::AD7689(uint8_t SSpin){
+AD7689::AD7689(uint8_t SSpin) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : 1000000, MSBFIRST, SPI_MODE0) {
   SPI.begin();
 
   AD7689_PIN = SSpin;
@@ -120,7 +120,7 @@ AD7689::AD7689(uint8_t SSpin){
 
   // set default configuration options
   inputConfig = INCC_UNIPOLAR_REF_GND;  // default to unipolar mode with negative reference to ground
-  inputCount = 7;                       // use all channels
+  inputCount = TOTAL_CHANNELS;                       // use all channels
   refConfig = INT_REF_4096;             // internal 4.096V reference
   filterConfig = false;                 // full bandwidth
 
@@ -212,15 +212,6 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
 // converts a command structure to a 16 bit word that can be transmitted over SPI
 uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 
-  // bit shifts needed for config register values, from datasheet p. 27 table 11:
-  #define CFG 13
-  #define INCC 10
-  #define INx 7
-  #define BW  6
-  #define REF 3
-  #define SEQ 1
-  #define RB 0
-
   // build 14 bit configuration word
   uint16_t command = 0;
   command |= cfg.CFG_conf << CFG;		// update config on chip
@@ -243,7 +234,7 @@ AD7689_conf AD7689::getDefaultConfig() const {
   AD7689_conf def;
   def.CFG_conf = true;                    // overwrite existing configuration
   def.INCC_conf = inputConfig;            // use unipolar inputs, with reference to ground
-  def.INx_conf = inputCount;           // read channel 0
+  def.INx_conf = (inputCount - 1);           // read channel 0
   def.BW_conf = !filterConfig;            // full bandwidth
   def.REF_conf = refConfig;               // use interal 4.096V reference voltage
   def.SEQ_conf = SEQ_OFF;                 // disable sequencer
@@ -277,7 +268,6 @@ bool AD7689::selftest() {
 // preliminary test results:
 // raw values range from 4260 at room temperature to over 4400 when heated
 // need calibration with ice cubes (= 0°C) and boiling methanol (= 64.7°C) or boiling ether (= 34.6°C)
-#define TEMP_REF 4.096  // reference voltage to be used for temperature measurement, either 2.5V or 4.096V
 float AD7689::readTemperature() {
 
   AD7689_conf temp_conf = getDefaultConfig();
