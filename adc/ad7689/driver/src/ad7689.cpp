@@ -19,26 +19,111 @@ void AD7689::configureSequencer(AD7689_conf sequence) {
   shiftTransaction(0, false, NULL);
 }
 
-AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref){
-  SPI.begin();
+// configure the voltage reference
+void AD7689::setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential) {
 
-  vref = ref;
-  if (refSource == REF_INTERNAL)
-  {
-    if (ref == 2.5)
-      refsrc = INT_REF_25;
-    else if (ref == 4.096)
-      refsrc = INT_REF_4096;
-    else {
-      vref = 4.096;
-      refsrc = INT_REF_4096; // default to 4.096V internal voltage reference
+    // set input configuration and negative reference
+    if (differential) {
+      if (polarity == BIPOLAR_MODE) {
+        // bipolar differential pairs, INx- referenced to Vref/2
+        inputConfig = INCC_BIPOLAR_DIFF;
+        negref = posRef / 2;
+      }  else {
+        // unipolar differential pairs, INx- referenced to GND
+        inputConfig = INCC_UNIPOLAR_DIFF; // default differential
+        negref = 0;
+      }
+
+    } else { // single ended
+      if (polarity == BIPOLAR_MODE) {
+        // bipolar single ended, INx referenced to COM = Vref/2
+        inputConfig = INCC_BIPOLAR_COM;
+        negref = posRef / 2;
+
+      } else { // unipolar
+        // unipolar, Inx referenced to GND
+        inputConfig = INCC_UNIPOLAR_REF_GND;
+        negref = 0;
+      }
     }
-  } else { // external reference
-    refsrc = EXT_REF_TEMP_BUF;
-  }
+
+    // set positive reference
+    if (refSource == REF_INTERNAL)
+    {
+      if (posRef == 2.5)
+        refsrc = INT_REF_25;
+      else if (posRef == 4.096)
+        refsrc = INT_REF_4096;
+      else {
+        posref = 4.096;
+        refsrc = INT_REF_4096; // default to 4.096V internal voltage reference
+      }
+    } else { // external reference
+      refsrc = EXT_REF_TEMP_BUF;
+      posref = posRef;
+    }
+
+}
+
+// set the number of input channels
+// when measuring differential, the number of actually used inputs should be set (number of differential channels x 2)
+void AD7689::setInputs(uint8_t channels) {
+  inputCount = channels;
+}
+
+// enable filtering to reduce bandwidth to 25%
+void AD7689::enableFiltering() {
+  filterConfig = true;
+}
+
+// disable filtering, full bandwidth
+void AD7689::disableFiltering() {
+  filterConfig = false;
+}
+
+// calculate a voltage from the sample using reference voltages
+float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
+  if (micros() > (timeStamps[channel] + sequenceTime))  // sequence outdated, acquire a new one
+    readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
+
+  *timeStamp = timeStamps[channel];
+  return calculateVoltage(samples[channel], posref, negref);
+}
+
+// convert sample to voltage
+float AD7689::calculateVoltage(uint16_t sample, float posRef, float negRef) {
+  return (sample * (posRef - negRef) / 65536);
+}
+
+// convert sample to temperature
+float AD7689::calculateTemp(uint16_t temp) {
+  // calculate temperature from ADC value:
+  // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
+  return 25 + ((temp * posref / 65536)- 0.283) * 0.001;
+
+}
+
+// return absolute temperature
+float AD7689::acquireTemperature() {
+  if (micros() > (tempTime + sequenceTime))  // temperature outdated, acquire a new one
+    readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
+
+  return calculateTemp(curTemp);
+}
+
+// constructor, intialize SPI and set SS pin
+AD7689::AD7689(uint8_t SSpin){
+  SPI.begin();
 
   AD7689_PIN = SSpin;
   pinMode(SSpin, OUTPUT);
+
+  // set default configuration options
+  inputConfig = INCC_UNIPOLAR_REF_GND;  // default to unipolar mode with negative reference to ground
+  inputCount = 7;                       // use all channels
+  refConfig = INT_REF_4096;             // internal 4.096V reference
+  filterConfig = false;                 // full bandwidth
+
 
 #ifdef DEBUG
   Serial.print("REF: "); Serial.println(conf.REF_conf, HEX);
@@ -157,10 +242,10 @@ AD7689_conf AD7689::getDefaultConfig() const {
 //AD7689_conf getDefaultConfig() {
   AD7689_conf def;
   def.CFG_conf = true;                    // overwrite existing configuration
-  def.INCC_conf = INCC_UNIPOLAR_REF_GND;  // use unipolar inputs, with reference to ground
-  def.INx_conf = 0;                       // read channel 0
-  def.BW_conf = 1;                        // full bandwidth
-  def.REF_conf = INT_REF_4096;            // use interal 4.096V reference voltage
+  def.INCC_conf = inputConfig;            // use unipolar inputs, with reference to ground
+  def.INx_conf = inputCount;           // read channel 0
+  def.BW_conf = !filterConfig;            // full bandwidth
+  def.REF_conf = refConfig;               // use interal 4.096V reference voltage
   def.SEQ_conf = SEQ_OFF;                 // disable sequencer
   def.RB_conf = false;                    // disable readback
 

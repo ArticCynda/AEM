@@ -39,6 +39,8 @@
 
 #define REF_INTERNAL          (0)
 #define REF_EXTERNAL          (1)
+#define REF_GND               (2)
+#define REF_COM               (3)
 
 //#define DEBUG
 
@@ -53,6 +55,17 @@ struct AD7689_conf {
   bool    RB_conf;
 };
 
+// set up the speed, mode and endianness of each device
+// MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
+// use CPHA = CPOL = 0
+// two dummy conversions are required on startup
+#if (F_CPU >= MAX_FREQ)
+  SPISettings AD7689_settings (MAX_FREQ, MSBFIRST, SPI_MODE0); // set SPI clock to maximum (38 MHz default)
+#else
+  //SPISettings AD7689_settings (F_CPU, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
+  SPISettings AD7689_settings (1000000, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
+#endif
+
 //AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref);
 
 class AD7689 {
@@ -60,12 +73,25 @@ class AD7689 {
     AD7689_conf conf;
     bool init_complete = false;
 
-    const SPISettings AD7689_settings;
+    //const SPISettings AD7689_settings;
 
     // Supports highly accurate sample time
     uint8_t AD7689_PIN;		// chip select pin to use (10 is standard)
-    float vref;
+    float posref;
+    float negref;
+
+    uint32_t timeStamps[8]; // time stamps for each sample
+    uint16_t samples[8];
+    uint16_t sequenceTime;
+    uint16_t curTemp;
+    uint16_t tempTime;
+
     uint8_t refsrc;
+
+    uint8_t inputConfig;
+    uint8_t inputCount;
+    uint8_t refConfig;
+    bool filterConfig;
 
     void init(float vref);
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
@@ -81,10 +107,22 @@ class AD7689 {
     //void setConfig(void);
     bool selftest(void);
 
+    float calculateVoltage(uint16_t sample, float posRef, float negRef);
+    float calculateTemp(uint16_t temp);
+
+
   public:
 
-    AD7689(uint8_t SSpin, uint8_t refSource, float ref) ;
-    //void init(uint8_t SSpin, uint8_t refSource, float ref);
+    // configure ADC
+    AD7689(uint8_t SSpin);
+    void setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential);
+    void setInputs(uint8_t channels);
+    void enableFiltering();
+    void disableFiltering();
+
+    float acquireChannel(uint8_t channel, uint32_t* timeStamp);
+    float acquireTemperature();
+
 };
 
 #endif
