@@ -53,7 +53,7 @@ struct AD7689_conf {
   bool    RB_conf;
 };
 
-AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref);
+//AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref);
 
 class AD7689 {
   protected:
