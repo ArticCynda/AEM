@@ -19,8 +19,23 @@ void AD7689::configureSequencer(AD7689_conf sequence) {
   shiftTransaction(0, false, NULL);
 }
 
-void AD7689::init(uint8_t SSpin, uint8_t refSource, float ref) {
+void AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref) {
   SPI.begin();
+
+  vref = ref;
+  if (refSource == REF_INTERNAL)
+  {
+    if (ref == 2.5)
+      refsrc = INT_REF_25;
+    else if (ref == 4.096)
+      refsrc = INT_REF_4096;
+    else {
+      vref = 4.096;
+      refsrc = INT_REF_4096; // default to 4.096V internal voltage reference
+    }
+  } else { // external reference
+    refsrc = EXT_REF_TEMP_BUF;
+  }
 
   AD7689_PIN = SSpin;
   pinMode(SSpin, OUTPUT);
@@ -138,8 +153,8 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 }
 
 // returns an ADC confuration loaded with the default settings, for testing purposes
-//AD7689_conf AD7689::getDefaultConfig() const {
-AD7689_conf getDefaultConfig() {
+AD7689_conf AD7689::getDefaultConfig() const {
+//AD7689_conf getDefaultConfig() {
   AD7689_conf def;
   def.CFG_conf = true;                    // overwrite existing configuration
   def.INCC_conf = INCC_UNIPOLAR_REF_GND;  // use unipolar inputs, with reference to ground

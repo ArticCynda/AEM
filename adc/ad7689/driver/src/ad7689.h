@@ -62,6 +62,8 @@ class AD7689 {
 
     // Supports highly accurate sample time
     uint8_t AD7689_PIN;		// chip select pin to use (10 is standard)
+    float vref;
+    uint8_t refsrc;
 
     void init(float vref);
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
@@ -70,15 +72,17 @@ class AD7689 {
 
     float readTemperature(void);
 
-  public:
     void configureSequencer(AD7689_conf sequence);
     void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp);
     //uint16_t read_AD7689 (void) const;
     //float readVoltage(uint8_t AIN);
     //void setConfig(void);
     bool selftest(void);
-    AD7689(uint8_t SSpin, float vref);
-    void init(uint8_t SSpin, uint8_t refSource, float ref);
+
+  public:
+
+    AD7689(uint8_t SSpin, uint8_t refSource, float ref);
+    //void init(uint8_t SSpin, uint8_t refSource, float ref);
 };
 
 #endif
