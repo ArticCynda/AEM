@@ -3,7 +3,7 @@
 void AD7689::configureSequencer(AD7689_conf sequence) {
 
   // turn on sequencer if it hasn't been turned on yet, and set it to read temperature too
-  sequence.SEQ_conf = SEQ_SCAN_INPUT_TEMP;
+  sequence.SEQ_conf = 0b10;
   // disable readback
   sequence.RB_conf = false;
   // overwrite existing command
@@ -50,10 +50,14 @@ void AD7689::setReference(uint8_t refSource, float posRef, uint8_t polarity, boo
     // set positive reference
     if (refSource == REF_INTERNAL)
     {
-      if (posRef == INTERNAL_25)
+      if (posRef == INTERNAL_25) {
         refsrc = INT_REF_25;
-      else if (posRef == INTERNAL_4096)
+        posref = 2.5;
+      }
+      else if (posRef == INTERNAL_4096) {
         refsrc = INT_REF_4096;
+        posref = 4.096;
+      }
       else {
         posref = INTERNAL_4096;
         refsrc = INT_REF_4096; // default to 4.096V internal voltage reference
@@ -83,15 +87,22 @@ void AD7689::disableFiltering() {
 
 // calculate a voltage from the sample using reference voltages
 float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
-  if (micros() > (timeStamps[channel] + sequenceTime))  // sequence outdated, acquire a new one
-    readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
+  //if (micros() > (timeStamps[channel] + sequenceTime))  // sequence outdated, acquire a new one
+
+  readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), samples, &curTemp);
 
   *timeStamp = timeStamps[channel];
+
+  //Serial.print("pos reference: "); Serial.println(posref);
+  ///Serial.print("neg reference: "); Serial.println(negref);
+  Serial.print("samples["+ String(channel)+"]:"); Serial.println(samples[channel], DEC);
+
   return calculateVoltage(samples[channel], posref, negref);
 }
 
 // convert sample to voltage
 float AD7689::calculateVoltage(uint16_t sample, float posRef, float negRef) {
+  //Serial.println("calculateVoltage:" + String(sample) +","+String(posref) +","+String(negref));
   return (sample * (posRef - negRef) / TOTAL_STEPS);
 }
 
@@ -120,10 +131,10 @@ AD7689::AD7689(uint8_t SSpin) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : 
 
   // set default configuration options
   inputConfig = INCC_UNIPOLAR_REF_GND;  // default to unipolar mode with negative reference to ground
-  inputCount = TOTAL_CHANNELS;                       // use all channels
+  inputCount = 8;                       // use all channels
   refConfig = INT_REF_4096;             // internal 4.096V reference
   filterConfig = false;                 // full bandwidth
-
+  configureSequencer(getDefaultConfig());
 
 #ifdef DEBUG
   Serial.print("REF: "); Serial.println(conf.REF_conf, HEX);
@@ -138,7 +149,9 @@ AD7689::AD7689(uint8_t SSpin) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : 
 //   mode: unipolar, bipolar or differential
 //   data: pointer to a vector holding the data, length depending on channels and mode
 //   temp: pointer to a variable holding the temperature
-void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp) {
+void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint16_t* temp) {
+
+  //Serial.println("channels: " + String(channels) + " mode: " + String(mode));
 
   uint8_t scans = channels; // unipolar mode default
   if (mode == DIFFERENTIAL_MODE) {
@@ -147,16 +160,22 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16
       scans++;
   }
 
+  uint16_t ptr;
   // read as many values as there are ADC channels active
   // when reading differential, only half the number of channels will be read
   for (uint8_t ch = 0; ch < scans; ch++) {
-    uint16_t retval = shiftTransaction(0, false, NULL);
-    *(data + ch) = retval;
-  }
+    uint16_t retval = shiftTransaction(0, false, &ptr);
+    //delay(5);
 
+    //Serial.print("retval "); //Serial.println(ch, DEC); //Serial.print(" : "); Serial.println(retval, DEC);
+    data[ch] = retval;
+
+  }
+  //Serial.println("data_0: " + String(data[0]));
   // capture temperature too
-  uint16_t t = shiftTransaction(0, false, NULL);
+  uint16_t t = shiftTransaction(0, false, &ptr);
   *temp = t;
+
 }
 
 /* sends a 16 bit word to the ADC, and simultaneously captures the response
@@ -229,11 +248,13 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 }
 
 // returns an ADC confuration loaded with the default settings, for testing purposes
+
 AD7689_conf AD7689::getDefaultConfig() const {
 //AD7689_conf getDefaultConfig() {
   AD7689_conf def;
   def.CFG_conf = true;                    // overwrite existing configuration
   def.INCC_conf = inputConfig;            // use unipolar inputs, with reference to ground
+  Serial.println("inputcount : " + String(inputCount));
   def.INx_conf = (inputCount - 1);           // read channel 0
   def.BW_conf = !filterConfig;            // full bandwidth
   def.REF_conf = refConfig;               // use interal 4.096V reference voltage
@@ -242,6 +263,19 @@ AD7689_conf AD7689::getDefaultConfig() const {
 
   return def;
 }
+/*
+AD7689_conf AD7689::getDefaultConfig() const {
+  AD7689_conf def;
+  def.CFG_conf = true;                    // overwrite existing configuration
+  def.INCC_conf = INCC_UNIPOLAR_REF_GND;  // use unipolar inputs, with reference to ground
+  def.INx_conf = 0;                       // read channel 0
+  def.BW_conf = 1;                        // full bandwidth
+  def.REF_conf = INT_REF_4096;            // use interal 4.096V reference voltage
+  def.SEQ_conf = SEQ_OFF;                 // disable sequencer
+  def.RB_conf = false;                    // disable readback
+
+  return def;
+}*/
 
 // returns a value indicating if the ADC is properly connected and responding
 bool AD7689::selftest() {
