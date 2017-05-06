@@ -19,7 +19,7 @@ void AD7689::configureSequencer(AD7689_conf sequence) {
   shiftTransaction(0, false, NULL);
 }
 
-void AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref) {
+AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref){
   SPI.begin();
 
   vref = ref;
