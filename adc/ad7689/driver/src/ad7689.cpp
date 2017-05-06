@@ -1,4 +1,5 @@
 #include "ad7689.h"
+/*
 
 void AD7689::configureSequencer(AD7689_conf sequence) {
 
@@ -58,12 +59,12 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16
   uint16_t t = shiftTransaction(0, false, NULL);
   *temp = t;
 }
-
+*/
 /* sends a 16 bit word to the ADC, and simultaneously captures the response
    ADC responses lag 2 frames behind on commands
    if readback is activated, 32 bits will be captured instead of 16
 */
-
+/*
 uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr) {
 
   // one time start-up sequence
@@ -109,7 +110,8 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
 
   return data;
 }
-
+*/
+/*
 // converts a command structure to a 16 bit word that can be transmitted over SPI
 uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 
@@ -137,6 +139,7 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 
   return command;
 }
+*/
 
 // returns an ADC confuration loaded with the default settings, for testing purposes
 AD7689_conf AD7689::getDefaultConfig() const {
@@ -151,7 +154,7 @@ AD7689_conf AD7689::getDefaultConfig() const {
 
   return def;
 }
-
+/*
 // returns a value indicating if the ADC is properly connected and responding
 bool AD7689::selftest() {
   // ADC will be tested with its readback function, which reads back a previous command
@@ -172,12 +175,12 @@ bool AD7689::selftest() {
 
   // response with initial readback command
   return (readback == toCommand(rb_conf));
-}
+}*/
 
 // preliminary test results:
 // raw values range from 4260 at room temperature to over 4400 when heated
 // need calibration with ice cubes (= 0°C) and boiling methanol (= 64.7°C) or boiling ether (= 34.6°C)
-
+/*
 #define TEMP_REF 4.096  // reference voltage to be used for temperature measurement, either 2.5V or 4.096V
 float AD7689::readTemperature() {
 
@@ -214,4 +217,4 @@ float AD7689::readTemperature() {
 
 
   return temp;
-}
+}*/
