@@ -14,7 +14,7 @@ void AD7689::configureSequencer() {
   uint16_t command = toCommand(sequence);
 
   // send command to configure ADC and enable sequencer
-  shiftTransaction(command, false, NULL);;
+  shiftTransaction(command, false, NULL);
 
   // skip a frame
   shiftTransaction(0, false, NULL);
@@ -99,7 +99,6 @@ float AD7689::calculateTemp(uint16_t temp) {
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
   //return BASE_TEMP + ((temp * posref / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
   return temp;
-
 }
 
 // return absolute temperature
@@ -145,15 +144,14 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint1
       scans++;
   }
 
-  uint16_t ptr;
   // read as many values as there are ADC channels active
   // when reading differential, only half the number of channels will be read
   for (uint8_t ch = 0; ch < scans; ch++) {
-    data[ch] = shiftTransaction(0, false, &ptr);;
+    data[ch] = shiftTransaction(0, false, NULL);;
   }
 
   // capture temperature too
-  *temp = shiftTransaction(0, false, &ptr);;
+  *temp = shiftTransaction(0, false, NULL);
 }
 
 /* sends a 16 bit word to the ADC, and simultaneously captures the response
@@ -186,7 +184,7 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
   data |= SPI.transfer(command & 0xFF);             // transmit / LSB
 
   // if a readback is requested, the 16 bit frame is extended with another 16 bits to retrieve the value
-  if (readback) {
+  if (rb_cmd_ptr && readback) {
     // duplicate previous command
     *rb_cmd_ptr = (SPI.transfer(command >> 8) << 8) | SPI.transfer(command & 0xFF);
   }
