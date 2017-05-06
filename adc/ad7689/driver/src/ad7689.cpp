@@ -142,7 +142,8 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 */
 
 // returns an ADC confuration loaded with the default settings, for testing purposes
-AD7689_conf AD7689::getDefaultConfig() const {
+//AD7689_conf AD7689::getDefaultConfig() const {
+AD7689_conf getDefaultConfig() {
   AD7689_conf def;
   def.CFG_conf = true;                    // overwrite existing configuration
   def.INCC_conf = INCC_UNIPOLAR_REF_GND;  // use unipolar inputs, with reference to ground

@@ -1,19 +1,15 @@
-#ifndef AD7689_H
-#define AD7689_H
+#ifndef ADC7689_H
+#define ADC7689_H
 
-#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
-
-#include <SPI.h>
+#include <SPI.h>		// include the new SPI library:
+#include <Arduino.h>
+#include "defs.h"
 
 // input configuration: bipolar/unipolar, single ended or differential
 #define INCC_BIPOLAR_DIFF     (0b000) // 00X
 #define INCC_BIPOLAR_COM      (0b010)
 #define INCC_TEMP             (0b011)
-#define INCC_UNIPOLAR_DIFF    (0b100)// 10X
+#define INCC_UNIPOLAR_DIFF    (0b100) // 10X
 #define INCC_UNIPOLAR_REF_COM (0b110)
 #define INCC_UNIPOLAR_REF_GND (0b111)
 
@@ -33,14 +29,16 @@
 
 #define MAX_FREQ              (38000000) // 26 ns period @ VDD 5V and VIO 3.3 - 5V
 
-#define UNIPOLAR_MODE         (0)
-#define BIPOLAR_MODE          (1)
-#define DIFFERENTIAL_MODE     (2)
+#define AD_DELAY   (4)    // delay from datasheet, default 6 µs
 
-#define REF_INTERNAL          (0)
-#define REF_EXTERNAL          (1)
-
-//#define DEBUG
+// bit shifts needed for config register values, from datasheet p. 27 table 11:
+#define CFG   (13)
+#define INCC  (10)
+#define INx   (7)
+#define BW    (6)
+#define REF   (3)
+#define SEQ   (1)
+#define RB    (0)
 
 struct AD7689_conf {
   bool    CFG_conf;
@@ -53,8 +51,7 @@ struct AD7689_conf {
   bool    RB_conf;
 };
 
-/*
-class AD7689 {
+class ADC7689 {
   protected:
     AD7689_conf conf;
     bool init_complete = false;
@@ -62,25 +59,22 @@ class AD7689 {
     const SPISettings AD7689_settings;
 
     // Supports highly accurate sample time
-    uint8_t AD7689_PIN;		// chip select pin to use (10 is standard)
+    const uint8_t AD7689_PIN;		// chip select pin to use (10 is standard)
 
+    // last device configuration
+    uint16_t ad7689_config = 0;
+    
     void init(float vref);
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
     uint16_t toCommand(AD7689_conf cfg) const;
-    AD7689_conf getDefaultConfig(void) const;
-
-    float readTemperature(void);
-
+    AD7689_conf getDefaultConfig() const;
+    
   public:
-    void configureSequencer(AD7689_conf sequence);
-    void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp);
-    //uint16_t read_AD7689 (void) const;
-    //float readVoltage(uint8_t AIN);
-    //void setConfig(void);
+    uint16_t read_AD7689 (void) const;
+    float readVoltage(uint8_t AIN);
+    void setConfig(void);
     bool selftest(void);
-    AD7689(uint8_t SSpin, float vref);
-    void init(uint8_t SSpin, uint8_t refSource, float ref);
+    ADC7689(uint8_t SSpin, float vref);
 };
-*/
-
 #endif
+
