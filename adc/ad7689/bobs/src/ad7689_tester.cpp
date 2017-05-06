@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "ad7689.h"
 
 ADC7689 *adc;

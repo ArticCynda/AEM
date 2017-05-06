@@ -2,9 +2,9 @@
 #define AD7689_H
 
 #if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
+#include <Arduino.h>
 #else
-#include "WProgram.h"
+#include <WProgram.h>
 #endif
 
 #include <SPI.h>
@@ -53,7 +53,6 @@ struct AD7689_conf {
   bool    RB_conf;
 };
 
-/*
 class AD7689 {
   protected:
     AD7689_conf conf;
@@ -81,6 +80,5 @@ class AD7689 {
     AD7689(uint8_t SSpin, float vref);
     void init(uint8_t SSpin, uint8_t refSource, float ref);
 };
-*/
 
 #endif
