@@ -59,6 +59,7 @@
 #define INTERNAL_4096         (4.096)
 #define TOTAL_CHANNELS        (8)
 #define TOTAL_STEPS           (65536)
+#define TCONV                 (4)
 
 //#define DEBUG
 
@@ -113,36 +114,29 @@ class AD7689 {
     uint8_t refConfig;
     bool filterConfig;
 
-    void init(float vref);
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
     uint16_t toCommand(AD7689_conf cfg) const;
     AD7689_conf getDefaultConfig(void) const;
 
     float readTemperature(void);
 
-    void configureSequencer(AD7689_conf sequence);
+    void configureSequencer();
     void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp);
-    //uint16_t read_AD7689 (void) const;
-    //float readVoltage(uint8_t AIN);
-    //void setConfig(void);
-    bool selftest(void);
 
     float calculateVoltage(uint16_t sample, float posRef, float negRef);
     float calculateTemp(uint16_t temp);
 
-
   public:
 
     // configure ADC
-    AD7689(uint8_t SSpin);
+    AD7689(uint8_t SSpin, uint8_t numberChannels=8);
     void setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential);
-    void setInputs(uint8_t channels);
-    void enableFiltering();
-    void disableFiltering();
+
+    void enableFiltering(bool onOff);
 
     float acquireChannel(uint8_t channel, uint32_t* timeStamp);
     float acquireTemperature();
 
+    bool selftest(void);
 };
-
 #endif
