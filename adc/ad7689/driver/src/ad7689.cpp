@@ -19,6 +19,7 @@ void AD7689::configureSequencer() {
 
   // skip a frame
   shiftTransaction(0, false, NULL);
+  lastSeqEndTime = micros();
 
   // remember that the sequencer is active to prevent unnecessary intializations
   sequencerActive = true;
@@ -198,6 +199,7 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint1
   // capture temperature too
   *temp = shiftTransaction(0, false, NULL);
   tempTime = micros() - framePeriod * 2;
+  lastSeqEndTime = micros();
 }
 
 // reset time stamps for all samples and force an update sequence at the start of the next read command
