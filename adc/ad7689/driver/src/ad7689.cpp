@@ -1,6 +1,7 @@
 #include "ad7689.h"
 
 void AD7689::configureSequencer() {
+  // load a new configuration with the setting specified by the user
   AD7689_conf sequence = getADCConfig();
 
   // turn on sequencer if it hasn't been turned on yet, and set it to read temperature too
@@ -18,6 +19,9 @@ void AD7689::configureSequencer() {
 
   // skip a frame
   shiftTransaction(0, false, NULL);
+
+  // remember that the sequencer is active to prevent unnecessary intializations
+  sequencerActive = true;
 }
 
 // configure the voltage reference
@@ -78,7 +82,7 @@ void AD7689::enableFiltering(bool onOff) {
 
 // calculate a voltage from the sample using reference voltages
 float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
-  if (micros() > (timeStamps[channel] + framePeriod * 7)) { // sequence outdated, acquire a new one
+  if (micros() > (timeStamps[channel] + framePeriod * (TOTAL_CHANNELS - 1))) { // sequence outdated, acquire a new one
     uint8_t cycles = 1;
     if (channel < 2) cycles++; // double sequence to update first 2 channels
 
@@ -108,34 +112,47 @@ float AD7689::calculateTemp(uint16_t temp) {
 
 // return absolute temperature
 float AD7689::acquireTemperature() {
-  if (micros() > (tempTime + framePeriod * 7))  // temperature outdated, acquire a new one
+  if (micros() > (tempTime + framePeriod * (TOTAL_CHANNELS - 1)))  // temperature outdated, acquire a new one
     readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
 
   return calculateTemp(curTemp);
 }
 
 // constructor, intialize SPI and set SS pin
+// set up the speed, mode and endianness of each device
+// MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
+// use CPHA = CPOL = 0
+// SPI runs at max CPU clock as long as it is below 38 MHz
 AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : F_CPU, MSBFIRST, SPI_MODE0) ,
                                                         AD7689_PIN(SSpin),
                                                         inputCount(numberChannels)  {
+  // initialize SPI transceiver
+  // if it's already active, then this doesn't do anything
   SPI.begin();
-  pinMode(SSpin, OUTPUT);
+
+  pinMode(SSpin, OUTPUT);    // configure slave select pin as output (not controlled by SPI transceiver)
+  digitalWrite(SSpin, HIGH); // slave select active low
 
   // set default configuration options
   inputConfig = INCC_UNIPOLAR_REF_GND;  // default to unipolar mode with negative reference to ground
   refConfig = INT_REF_4096;             // internal 4.096V reference
   filterConfig = false;                 // full bandwidth
-  initializeTiming();
-  configureSequencer();
-  setReference(REF_INTERNAL, INTERNAL_4096, UNIPOLAR_MODE, false);
 
-#ifdef DEBUG
-  Serial.print("REF: "); Serial.println(conf.REF_conf, HEX);
-  Serial.print("REF V: "); Serial.println(conf.REF_voltage, DEC);
-#endif
+  // measure how long it takes to complete a 16-bit r/w cycle using current F_CPU for accurate sample timing
+  cycleTimingBenchmark();
+
+  // reset sample time stamps and force an update sequence at the next read command
+  initSampleTiming();
+  sequencerActive = false; // sequencer disabled by default
+
+  // set reference source and voltage to the most commonly used values
+  setReference(REF_INTERNAL, INTERNAL_4096, UNIPOLAR_MODE, false);
 }
 
-void AD7689::initializeTiming() {
+// measures the time required to transceive a complete 16 bit frame, using the current CPU clock speed
+// this is required to generate accurate time stamps
+// should be called once when starting the ADC, or whenever the clock frequency is changed (i.e. dynamic clock switching)
+void AD7689::cycleTimingBenchmark() {
 
   uint32_t startTime = micros(); // record current CPU time
   uint16_t data;
@@ -154,6 +171,11 @@ void AD7689::initializeTiming() {
 //   data: pointer to a vector holding the data, length depending on channels and mode
 //   temp: pointer to a variable holding the temperature
 void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint16_t* temp) {
+
+  // if the sequencer insn't active yet, enable it
+  // occurs after self testing or at start-up
+  if (!sequencerActive)
+    configureSequencer();
 
   uint8_t scans = channels; // unipolar mode default
   if (mode == DIFFERENTIAL_MODE) {
@@ -178,7 +200,7 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint1
   tempTime = micros() - framePeriod * 2;
 }
 
-// initialize time stamps
+// reset time stamps for all samples and force an update sequence at the start of the next read command
 uint32_t AD7689::initSampleTiming() {
   uint32_t curTime = micros(); // retrieve microcontroller run time in microseconds
 
@@ -252,9 +274,8 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
   return command;
 }
 
-
 // assemble user settings into a configuration for the ADC, or return a default configuration
-AD7689_conf AD7689::getADCConfig(bool default_config) const {
+AD7689_conf AD7689::getADCConfig(bool default_config) {
   AD7689_conf def;
 
   def.CFG_conf   = true;                    // overwrite existing configuration
@@ -271,6 +292,9 @@ AD7689_conf AD7689::getADCConfig(bool default_config) const {
     def.BW_conf    = !filterConfig;
     def.REF_conf   = refConfig;
   }
+
+  // sequencer disabled, remember to restart it when taking measurements
+  sequencerActive = false;
 
   return def;
 }
@@ -293,7 +317,6 @@ bool AD7689::selftest() {
   uint16_t readback;
   shiftTransaction(toCommand(getADCConfig(false)), true, &readback);
 
-  configureSequencer();
   // response with initial readback command
   return (readback == toCommand(rb_conf));
 }
@@ -328,12 +351,9 @@ float AD7689::readTemperature() {
   // retrieve temperature reading
   uint16_t t = shiftTransaction(toCommand(getADCConfig(false)), false, NULL);
 
-  Serial.print("temp ADC out: "); Serial.println(t, DEC);
-
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
   float temp = BASE_TEMP + ((t * TEMP_REF / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
-
 
   return temp;
 }

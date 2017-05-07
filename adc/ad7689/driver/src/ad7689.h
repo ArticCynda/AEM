@@ -62,8 +62,6 @@
 #define TCONV                 (4)
 #define STARTUP_DELAY         (100)
 
-//#define DEBUG
-
 struct AD7689_conf {
   bool    CFG_conf;
   uint8_t INCC_conf;
@@ -74,21 +72,6 @@ struct AD7689_conf {
   float   REF_voltage;
   bool    RB_conf;
 };
-
-// set up the speed, mode and endianness of each device
-// MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
-// use CPHA = CPOL = 0
-// two dummy conversions are required on startup
-/*
-#if (F_CPU >= MAX_FREQ)
-  SPISettings AD7689_settings (MAX_FREQ, MSBFIRST, SPI_MODE0); // set SPI clock to maximum (38 MHz default)
-#else
-  //SPISettings AD7689_settings (F_CPU, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
-  SPISettings AD7689_settings (1000000, MSBFIRST, SPI_MODE0); // set SPI clock to CPU clock
-#endif
-*/
-
-//AD7689::AD7689(uint8_t SSpin, uint8_t refSource, float ref);
 
 class AD7689 {
   protected:
@@ -109,6 +92,8 @@ class AD7689 {
     uint16_t tempTime;
     uint32_t lastSeqEndTime;
 
+    bool sequencerActive;   // true when the sequencer is initialized, false at start-up or during self tests
+
     uint8_t refsrc;
 
     uint8_t inputConfig;
@@ -118,7 +103,7 @@ class AD7689 {
 
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
     uint16_t toCommand(AD7689_conf cfg) const;
-    AD7689_conf getADCConfig(bool default_config = false) const;
+    AD7689_conf getADCConfig(bool default_config = false);
 
     float readTemperature(void);
 
@@ -129,11 +114,10 @@ class AD7689 {
     float calculateTemp(uint16_t temp);
 
     uint32_t initSampleTiming(void);
-    void initializeTiming(void);
+    void cycleTimingBenchmark(void);
 
   public:
 
-    // configure ADC
     AD7689(uint8_t SSpin, uint8_t numberChannels = TOTAL_CHANNELS);
     void setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential);
 

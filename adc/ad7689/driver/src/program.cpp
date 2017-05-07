@@ -3,13 +3,13 @@
 
 AD7689 *adc;
 const int numberChannels =3;
-  
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
 
   adc = new AD7689(10);
-  Serial.println("selftest: " + String(adc->selftest()));
+  Serial.println("selftest: " + String(adc->selftest() ? "success" : "failed"));
 }
 int i =0;
 void loop() {
