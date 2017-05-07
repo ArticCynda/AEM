@@ -136,7 +136,7 @@ void AD7689::initializeTiming() {
   uint16_t data;
   // make 10 transactions, then average the duration
   for (uint8_t trans = 0; trans < 10; trans++)
-    data += shiftTransaction(toCommand(getDefaultConfig()), false, NULL); // default configuration, no readback
+    data += shiftTransaction(toCommand(getADCConfig(false)), false, NULL); // default configuration, no readback
 
   framePeriod = (micros() - startTime) / 10;
 }
@@ -244,29 +244,26 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 
 
 
-AD7689_conf AD7689::getADCConfig() const {
+AD7689_conf AD7689::getADCConfig(bool default_config) const {
   AD7689_conf def;
-  def.CFG_conf   = true;                    // overwrite existing configuration
-  def.INCC_conf  = inputConfig;            // default unipolar inputs, with reference to ground
-  def.INx_conf   = (inputCount - 1);        // read all channels
-  def.BW_conf    = !filterConfig;            // full bandwidth
-  def.REF_conf   = refConfig;               // use interal 4.096V reference voltage
-  def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
-  def.RB_conf    = false;                    // disable readback
 
-  return def;
-}
-
-// returns an ADC confuration loaded with the default settings, for testing purposes
-AD7689_conf AD7689::getDefaultConfig() const {
-  AD7689_conf def;
-  def.CFG_conf   = true;                    // overwrite existing configuration
-  def.INCC_conf  = INCC_UNIPOLAR_REF_GND;  // default unipolar inputs, with reference to ground
-  def.INx_conf   = TOTAL_CHANNELS;          // read all channels
-  def.BW_conf    = true;                     // full bandwidth
-  def.REF_conf   = INT_REF_4096;            // use interal 4.096V reference voltage
-  def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
-  def.RB_conf    = false;                    // disable readback
+  if (default_config) { // default settings preloaded
+    def.CFG_conf   = true;                    // overwrite existing configuration
+    def.INCC_conf  = INCC_UNIPOLAR_REF_GND;  // default unipolar inputs, with reference to ground
+    def.INx_conf   = TOTAL_CHANNELS;          // read all channels
+    def.BW_conf    = true;                     // full bandwidth
+    def.REF_conf   = INT_REF_4096;            // use interal 4.096V reference voltage
+    def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
+    def.RB_conf    = false;                    // disable readback
+  } else { // build configuration from user settings
+    def.CFG_conf   = true;                    // overwrite existing configuration
+    def.INCC_conf  = inputConfig;            // default unipolar inputs, with reference to ground
+    def.INx_conf   = (inputCount - 1);        // read all channels
+    def.BW_conf    = !filterConfig;            // full bandwidth
+    def.REF_conf   = refConfig;               // use interal 4.096V reference voltage
+    def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
+    def.RB_conf    = false;                    // disable readback
+  }
 
   return def;
 }
@@ -276,18 +273,18 @@ bool AD7689::selftest() {
   // ADC will be tested with its readback function, which reads back a previous command
   // this process takes 3 cycles
 
-  AD7689_conf rb_conf = getDefaultConfig();
+  AD7689_conf rb_conf = getADCConfig(true);
   rb_conf.RB_conf = true;    // enable readback
 
   // send readback command
   shiftTransaction(toCommand(rb_conf), false, NULL);
 
   // skip second frame
-  shiftTransaction(toCommand(getDefaultConfig()), false, NULL);
+  shiftTransaction(toCommand(getADCConfig(false)), false, NULL);
 
   // capture readback response
   uint16_t readback;
-  shiftTransaction(toCommand(getDefaultConfig()), true, &readback);
+  shiftTransaction(toCommand(getADCConfig(false)), true, &readback);
 
   configureSequencer();
   // response with initial readback command
@@ -299,7 +296,7 @@ bool AD7689::selftest() {
 // need calibration with ice cubes (= 0°C) and boiling methanol (= 64.7°C) or boiling ether (= 34.6°C)
 float AD7689::readTemperature() {
 
-  AD7689_conf temp_conf = getDefaultConfig();
+  AD7689_conf temp_conf = getADCConfig(false);
 
   // set to use internal reference voltage
   // this automatically turns on the temperature sensor
@@ -319,10 +316,10 @@ float AD7689::readTemperature() {
   shiftTransaction(toCommand(temp_conf), false, NULL);
 
   // skip second frame
-  shiftTransaction(toCommand(getDefaultConfig()), false, NULL);
+  shiftTransaction(toCommand(getADCConfig(false)), false, NULL);
 
   // retrieve temperature reading
-  uint16_t t = shiftTransaction(toCommand(getDefaultConfig()), false, NULL);
+  uint16_t t = shiftTransaction(toCommand(getADCConfig(false)), false, NULL);
 
   Serial.print("temp ADC out: "); Serial.println(t, DEC);
 

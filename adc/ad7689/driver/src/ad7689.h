@@ -116,8 +116,7 @@ class AD7689 {
 
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
     uint16_t toCommand(AD7689_conf cfg) const;
-    AD7689_conf getADCConfig(void) const;
-    AD7689_conf getDefaultConfig(void) const;
+    AD7689_conf getADCConfig(bool default_config = false) const;
 
     float readTemperature(void);
 
