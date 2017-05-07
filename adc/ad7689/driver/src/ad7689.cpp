@@ -243,26 +243,23 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 }
 
 
-
+// assemble user settings into a configuration for the ADC, or return a default configuration
 AD7689_conf AD7689::getADCConfig(bool default_config) const {
   AD7689_conf def;
 
-  if (default_config) { // default settings preloaded
-    def.CFG_conf   = true;                    // overwrite existing configuration
-    def.INCC_conf  = INCC_UNIPOLAR_REF_GND;  // default unipolar inputs, with reference to ground
-    def.INx_conf   = TOTAL_CHANNELS;          // read all channels
-    def.BW_conf    = true;                     // full bandwidth
-    def.REF_conf   = INT_REF_4096;            // use interal 4.096V reference voltage
-    def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
-    def.RB_conf    = false;                    // disable readback
-  } else { // build configuration from user settings
-    def.CFG_conf   = true;                    // overwrite existing configuration
-    def.INCC_conf  = inputConfig;            // default unipolar inputs, with reference to ground
-    def.INx_conf   = (inputCount - 1);        // read all channels
-    def.BW_conf    = !filterConfig;            // full bandwidth
-    def.REF_conf   = refConfig;               // use interal 4.096V reference voltage
-    def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
-    def.RB_conf    = false;                    // disable readback
+  def.CFG_conf   = true;                    // overwrite existing configuration
+  def.INCC_conf  = INCC_UNIPOLAR_REF_GND;   // default unipolar inputs, with reference to ground
+  def.INx_conf   = TOTAL_CHANNELS;          // read all channels
+  def.BW_conf    = true;                    // full bandwidth
+  def.REF_conf   = INT_REF_4096;            // use interal 4.096V reference voltage
+  def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
+  def.RB_conf    = false;                   // disable readback
+
+  if (!default_config) { // default settings preloaded
+    def.INCC_conf  = inputConfig;
+    def.INx_conf   = (inputCount - 1);
+    def.BW_conf    = !filterConfig;
+    def.REF_conf   = refConfig;
   }
 
   return def;
