@@ -101,9 +101,9 @@ class AD7689 {
     float posref;
     float negref;
 
-    uint32_t timeStamps[8]; // time stamps for each sample
-    uint16_t samples[8];
-    uint16_t sequenceTime;
+    uint32_t timeStamps[TOTAL_CHANNELS]; // time stamps for each sample
+    uint16_t samples[TOTAL_CHANNELS];
+    uint16_t framePeriod;
     uint16_t curTemp;
     uint16_t tempTime;
 
@@ -116,6 +116,7 @@ class AD7689 {
 
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
     uint16_t toCommand(AD7689_conf cfg) const;
+    AD7689_conf getADCConfig(void) const;
     AD7689_conf getDefaultConfig(void) const;
 
     float readTemperature(void);
@@ -132,7 +133,7 @@ class AD7689 {
   public:
 
     // configure ADC
-    AD7689(uint8_t SSpin, uint8_t numberChannels=8);
+    AD7689(uint8_t SSpin, uint8_t numberChannels = TOTAL_CHANNELS);
     void setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential);
 
     void enableFiltering(bool onOff);

@@ -1,7 +1,7 @@
 #include "ad7689.h"
 
 void AD7689::configureSequencer() {
-  AD7689_conf sequence = getDefaultConfig();
+  AD7689_conf sequence = getADCConfig();
 
   // turn on sequencer if it hasn't been turned on yet, and set it to read temperature too
   sequence.SEQ_conf = SEQ_SCAN_INPUT_TEMP;
@@ -78,7 +78,7 @@ void AD7689::enableFiltering(bool onOff) {
 
 // calculate a voltage from the sample using reference voltages
 float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
-  if (micros() > (timeStamps[channel] + sequenceTime))  // sequence outdated, acquire a new one
+  if (micros() > (timeStamps[channel] + framePeriod * 7))  // sequence outdated, acquire a new one
 
   readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), samples, &curTemp);
 
@@ -103,7 +103,7 @@ float AD7689::calculateTemp(uint16_t temp) {
 
 // return absolute temperature
 float AD7689::acquireTemperature() {
-  if (micros() > (tempTime + sequenceTime))  // temperature outdated, acquire a new one
+  if (micros() > (tempTime + framePeriod * 7))  // temperature outdated, acquire a new one
     readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
 
   return calculateTemp(curTemp);
@@ -120,6 +120,7 @@ AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >
   inputConfig = INCC_UNIPOLAR_REF_GND;  // default to unipolar mode with negative reference to ground
   refConfig = INT_REF_4096;             // internal 4.096V reference
   filterConfig = false;                 // full bandwidth
+  initializeTiming();
   configureSequencer();
   setReference(REF_INTERNAL, INTERNAL_4096, UNIPOLAR_MODE, false);
 
@@ -130,8 +131,14 @@ AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >
 }
 
 void AD7689::initializeTiming() {
-  // calculate frame duration based on CPU speed
-  sequenceTime = 6;
+
+  uint32_t startTime = micros(); // record current CPU time
+  uint16_t data;
+  // make 10 transactions, then average the duration
+  for (uint8_t trans = 0; trans < 10; trans++)
+    data += shiftTransaction(toCommand(getDefaultConfig()), false, NULL); // default configuration, no readback
+
+  framePeriod = (micros() - startTime) / 10;
 }
 
 // reads voltages from selected channels, always read temperature too
@@ -153,12 +160,12 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint1
   // when reading differential, only half the number of channels will be read
   for (uint8_t ch = 0; ch < scans; ch++) {
     data[ch] = shiftTransaction(0, false, NULL);
-    timeStamps[ch] = micros() - sequenceTime * 2; // sequenceTime in µs, 2 frames lag
+    timeStamps[ch] = micros() - framePeriod * 2; // sequenceTime in µs, 2 frames lag
   }
 
   // capture temperature too
   *temp = shiftTransaction(0, false, NULL);
-  tempTime = micros() - sequenceTime * 2;
+  tempTime = micros() - framePeriod * 2;
 }
 
 // initialize time stamps
@@ -235,19 +242,31 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
   return command;
 }
 
-// returns an ADC confuration loaded with the default settings, for testing purposes
 
-AD7689_conf AD7689::getDefaultConfig() const {
-//AD7689_conf getDefaultConfig() {
+
+AD7689_conf AD7689::getADCConfig() const {
   AD7689_conf def;
-  def.CFG_conf = true;                    // overwrite existing configuration
-  def.INCC_conf = inputConfig;            // use unipolar inputs, with reference to ground
-  //Serial.println("inputcount : " + String(inputCount));
-  def.INx_conf = (inputCount - 1);           // read channel 0
-  def.BW_conf = !filterConfig;            // full bandwidth
-  def.REF_conf = refConfig;               // use interal 4.096V reference voltage
-  def.SEQ_conf = SEQ_OFF;                 // disable sequencer
-  def.RB_conf = false;                    // disable readback
+  def.CFG_conf   = true;                    // overwrite existing configuration
+  def.INCC_conf  = inputConfig;            // default unipolar inputs, with reference to ground
+  def.INx_conf   = (inputCount - 1);        // read all channels
+  def.BW_conf    = !filterConfig;            // full bandwidth
+  def.REF_conf   = refConfig;               // use interal 4.096V reference voltage
+  def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
+  def.RB_conf    = false;                    // disable readback
+
+  return def;
+}
+
+// returns an ADC confuration loaded with the default settings, for testing purposes
+AD7689_conf AD7689::getDefaultConfig() const {
+  AD7689_conf def;
+  def.CFG_conf   = true;                    // overwrite existing configuration
+  def.INCC_conf  = INCC_UNIPOLAR_REF_GND;  // default unipolar inputs, with reference to ground
+  def.INx_conf   = TOTAL_CHANNELS;          // read all channels
+  def.BW_conf    = true;                     // full bandwidth
+  def.REF_conf   = INT_REF_4096;            // use interal 4.096V reference voltage
+  def.SEQ_conf   = SEQ_OFF;                 // disable sequencer
+  def.RB_conf    = false;                    // disable readback
 
   return def;
 }
