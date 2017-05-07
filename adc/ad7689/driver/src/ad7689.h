@@ -126,6 +126,9 @@ class AD7689 {
     float calculateVoltage(uint16_t sample, float posRef, float negRef);
     float calculateTemp(uint16_t temp);
 
+    uint32_t initSampleTiming(void);
+    void initializeTiming(void);
+
   public:
 
     // configure ADC

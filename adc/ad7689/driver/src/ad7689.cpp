@@ -78,7 +78,7 @@ void AD7689::enableFiltering(bool onOff) {
 
 // calculate a voltage from the sample using reference voltages
 float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
-  //if (micros() > (timeStamps[channel] + sequenceTime))  // sequence outdated, acquire a new one
+  if (micros() > (timeStamps[channel] + sequenceTime))  // sequence outdated, acquire a new one
 
   readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), samples, &curTemp);
 
@@ -110,7 +110,7 @@ float AD7689::acquireTemperature() {
 }
 
 // constructor, intialize SPI and set SS pin
-AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : 1000000, MSBFIRST, SPI_MODE0) ,
+AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : F_CPU, MSBFIRST, SPI_MODE0) ,
                                                         AD7689_PIN(SSpin),
                                                         inputCount(numberChannels)  {
   SPI.begin();
@@ -127,6 +127,11 @@ AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >
   Serial.print("REF: "); Serial.println(conf.REF_conf, HEX);
   Serial.print("REF V: "); Serial.println(conf.REF_voltage, DEC);
 #endif
+}
+
+void AD7689::initializeTiming() {
+  // calculate frame duration based on CPU speed
+  sequenceTime = 6;
 }
 
 // reads voltages from selected channels, always read temperature too
@@ -147,11 +152,24 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint1
   // read as many values as there are ADC channels active
   // when reading differential, only half the number of channels will be read
   for (uint8_t ch = 0; ch < scans; ch++) {
-    data[ch] = shiftTransaction(0, false, NULL);;
+    data[ch] = shiftTransaction(0, false, NULL);
+    timeStamps[ch] = micros() - sequenceTime * 2; // sequenceTime in µs, 2 frames lag
   }
 
   // capture temperature too
   *temp = shiftTransaction(0, false, NULL);
+  tempTime = micros() - sequenceTime * 2;
+}
+
+// initialize time stamps
+uint32_t AD7689::initSampleTiming() {
+  uint32_t curTime = micros(); // retrieve microcontroller run time in microseconds
+
+  // set time for all samples to current time to force an update sequence
+  for (uint8_t i = 0; i < TOTAL_CHANNELS; i++) timeStamps[i] = curTime;
+
+  tempTime = curTime;
+  return curTime;
 }
 
 /* sends a 16 bit word to the ADC, and simultaneously captures the response
