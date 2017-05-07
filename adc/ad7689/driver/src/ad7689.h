@@ -60,6 +60,7 @@
 #define TOTAL_CHANNELS        (8)
 #define TOTAL_STEPS           (65536)
 #define TCONV                 (4)
+#define STARTUP_DELAY         (100)
 
 //#define DEBUG
 
@@ -106,6 +107,7 @@ class AD7689 {
     uint16_t framePeriod;
     uint16_t curTemp;
     uint16_t tempTime;
+    uint32_t lastSeqEndTime;
 
     uint8_t refsrc;
 

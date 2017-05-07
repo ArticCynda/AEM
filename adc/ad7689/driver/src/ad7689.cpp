@@ -78,9 +78,14 @@ void AD7689::enableFiltering(bool onOff) {
 
 // calculate a voltage from the sample using reference voltages
 float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
-  if (micros() > (timeStamps[channel] + framePeriod * 7))  // sequence outdated, acquire a new one
+  if (micros() > (timeStamps[channel] + framePeriod * 7)) { // sequence outdated, acquire a new one
+    uint8_t cycles = 1;
+    if (channel < 2) cycles++; // double sequence to update first 2 channels
 
-  readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), samples, &curTemp);
+    // run 1 or 2 sequences depending on the outdated channel
+    for (uint8_t cycle = 0; cycle < cycles; cycle++)
+      readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), samples, &curTemp);
+  }
 
   *timeStamp = timeStamps[channel];
 
@@ -139,6 +144,7 @@ void AD7689::initializeTiming() {
     data += shiftTransaction(toCommand(getADCConfig(false)), false, NULL); // default configuration, no readback
 
   framePeriod = (micros() - startTime) / 10;
+  lastSeqEndTime = startTime;
 }
 
 // reads voltages from selected channels, always read temperature too
@@ -160,7 +166,11 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint1
   // when reading differential, only half the number of channels will be read
   for (uint8_t ch = 0; ch < scans; ch++) {
     data[ch] = shiftTransaction(0, false, NULL);
-    timeStamps[ch] = micros() - framePeriod * 2; // sequenceTime in µs, 2 frames lag
+    if (ch < 2) { // calculate time stamp based on ending of previous sequence for first 2 frames
+      timeStamps[ch] = lastSeqEndTime - (1 - ch) * framePeriod;
+    } else {
+      timeStamps[ch] = micros() - framePeriod * 2; // sequenceTime in µs, 2 frames lag
+    }
   }
 
   // capture temperature too
@@ -188,7 +198,7 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
   // one time start-up sequence
   if (!init_complete) {
     // give ADC time to start up
-    delay(100);
+    delay(STARTUP_DELAY);
 
     // synchronize start of conversion
     digitalWrite(AD7689_PIN, LOW);
