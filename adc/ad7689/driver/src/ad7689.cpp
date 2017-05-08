@@ -98,13 +98,13 @@ float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
 }
 
 // convert sample to voltage
-float AD7689::calculateVoltage(uint16_t sample, float posRef, float negRef) {
+float AD7689::calculateVoltage(uint16_t sample, float posRef, float negRef) const {
   //Serial.println("calculateVoltage:" + String(sample) +","+String(posref) +","+String(negref));
   return (sample * (posRef - negRef) / TOTAL_STEPS);
 }
 
 // convert sample to temperature
-float AD7689::calculateTemp(uint16_t temp) {
+float AD7689::calculateTemp(uint16_t temp) const {
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
   //return BASE_TEMP + ((temp * posref / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
@@ -125,14 +125,14 @@ float AD7689::acquireTemperature() {
 // use CPHA = CPOL = 0
 // SPI runs at max CPU clock as long as it is below 38 MHz
 AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : F_CPU, MSBFIRST, SPI_MODE0) ,
-                                                        AD7689_PIN(SSpin),
+                                                        SS(SSpin),
                                                         inputCount(numberChannels)  {
   // initialize SPI transceiver
   // if it's already active, then this doesn't do anything
   SPI.begin();
 
-  pinMode(SSpin, OUTPUT);    // configure slave select pin as output (not controlled by SPI transceiver)
-  digitalWrite(SSpin, HIGH); // slave select active low
+  pinMode(SS, OUTPUT);    // configure slave select pin as output (not controlled by SPI transceiver)
+  digitalWrite(SS, HIGH); // slave select active low
 
   // set default configuration options
   inputConfig = INCC_UNIPOLAR_REF_GND;  // default to unipolar mode with negative reference to ground
@@ -158,6 +158,7 @@ void AD7689::cycleTimingBenchmark() {
   uint32_t startTime = micros(); // record current CPU time
   uint16_t data;
   // make 10 transactions, then average the duration
+  // dummy variable 'data' is assigned to emulate a realistic operation with the retrieved data
   for (uint8_t trans = 0; trans < 10; trans++)
     data += shiftTransaction(toCommand(getADCConfig(false)), false, NULL); // default configuration, no readback
 
@@ -207,7 +208,8 @@ uint32_t AD7689::initSampleTiming() {
   uint32_t curTime = micros(); // retrieve microcontroller run time in microseconds
 
   // set time for all samples to current time to force an update sequence
-  for (uint8_t i = 0; i < TOTAL_CHANNELS; i++) timeStamps[i] = curTime;
+  for (uint8_t i = 0; i < TOTAL_CHANNELS; i++)
+    timeStamps[i] = curTime;
 
   tempTime = curTime;
   return curTime;
@@ -225,9 +227,9 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
     delay(STARTUP_DELAY);
 
     // synchronize start of conversion
-    digitalWrite(AD7689_PIN, LOW);
-    delayMicroseconds(1); // miniumum 10 ns
-    digitalWrite(AD7689_PIN, HIGH);
+    digitalWrite(SS, LOW);
+    delayMicroseconds(TACQ); // miniumum 10 ns
+    digitalWrite(SS, HIGH);
     delayMicroseconds(TCONV); // minimum 3.2 µs
     init_complete = true;
   }
@@ -237,10 +239,9 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
 
   // send config (RAC mode) and acquire data
   SPI.beginTransaction(AD7689_settings);
-  digitalWrite(AD7689_PIN, LOW); // activate the ADC
+  digitalWrite(SS, LOW); // activate the ADC
 
-  uint16_t data = SPI.transfer(command >> 8) << 8;  // transmit 8 MSB
-  data |= SPI.transfer(command & 0xFF);             // transmit / LSB
+  uint16_t data = (SPI.transfer(command >> 8) << 8) | SPI.transfer(command & 0xFF);
 
   // if a readback is requested, the 16 bit frame is extended with another 16 bits to retrieve the value
   if (rb_cmd_ptr && readback) {
@@ -248,11 +249,11 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
     *rb_cmd_ptr = (SPI.transfer(command >> 8) << 8) | SPI.transfer(command & 0xFF);
   }
 
-  digitalWrite(AD7689_PIN, HIGH); // release the ADC
+  digitalWrite(SS, HIGH); // release the ADC
   SPI.endTransaction();
 
   // delay to allow data acquisition for the next cycle
-  delayMicroseconds(2); // minumum 1.2µs
+  delayMicroseconds(TACQ); // minumum 1.2µs
 
   return data;
 }
@@ -332,16 +333,19 @@ float AD7689::readTemperature() {
 
   // set to use internal reference voltage
   // this automatically turns on the temperature sensor
+  /*
   if (TEMP_REF == INTERNAL_25)
     temp_conf.REF_conf = INT_REF_25;
   else
     temp_conf.REF_conf = INT_REF_4096;
+    */
+  temp_conf.REF_conf = TEMP_REF == INTERNAL_25 ? INT_REF_25 : INT_REF_4096;
 
   // configure MUX for temperature sensor
   temp_conf.INCC_conf = INCC_TEMP;
 
-  digitalWrite(AD7689_PIN, LOW);
-  digitalWrite(AD7689_PIN, HIGH);
+  digitalWrite(SS, LOW);
+  digitalWrite(SS, HIGH);
   delayMicroseconds(TCONV);
 
   // send the command
@@ -355,7 +359,5 @@ float AD7689::readTemperature() {
 
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
-  float temp = BASE_TEMP + ((t * TEMP_REF / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
-
-  return temp;
+  return BASE_TEMP + ((t * TEMP_REF / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
 }

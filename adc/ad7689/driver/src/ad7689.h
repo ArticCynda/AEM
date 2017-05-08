@@ -60,6 +60,7 @@
 #define TOTAL_CHANNELS        (8)
 #define TOTAL_STEPS           (65536)
 #define TCONV                 (4)
+#define TACQ                  (2)
 #define STARTUP_DELAY         (100)
 
 struct AD7689_conf {
@@ -81,7 +82,7 @@ class AD7689 {
     const SPISettings AD7689_settings;
 
     // Supports highly accurate sample time
-    uint8_t AD7689_PIN;		// chip select pin to use (10 is standard)
+    uint8_t SS;		// chip select pin to use (10 is standard)
     float posref;
     float negref;
 
@@ -110,8 +111,8 @@ class AD7689 {
     void configureSequencer();
     void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp);
 
-    float calculateVoltage(uint16_t sample, float posRef, float negRef);
-    float calculateTemp(uint16_t temp);
+    float calculateVoltage(uint16_t sample, float posRef, float negRef) const;
+    float calculateTemp(uint16_t temp) const;
 
     uint32_t initSampleTiming(void);
     void cycleTimingBenchmark(void);
