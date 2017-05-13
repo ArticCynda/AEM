@@ -111,7 +111,7 @@ class AD7689 {
     void configureSequencer();
     void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp);
 
-    float calculateVoltage(uint16_t sample, float posRef, float negRef) const;
+    float calculateVoltage(uint16_t sample) const;
     float calculateTemp(uint16_t temp) const;
 
     uint32_t initSampleTiming(void);

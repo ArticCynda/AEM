@@ -1,3 +1,10 @@
+// Driver code for the Analog Devices AD7689 16 bit, 8 channel, SPI ADC.
+// Will use default SPI port of the MCU as specified by the SPI.h header
+// All functionality of the chip is currently supported, some of it is untested however
+// Report bugs by opening a ticket on Github:
+// This driver MAY also work for the similar chip AD7682, but this hasn't been tested.
+// Code released under MIT license blah blah blah, use it however you wish, if it has been useful then let me know about your project at yannick [dot] verbelen [at] inventati [dot] org
+
 #include "ad7689.h"
 
 void AD7689::configureSequencer() {
@@ -94,29 +101,40 @@ float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
 
   *timeStamp = timeStamps[channel];
 
-  return calculateVoltage(samples[channel], posref, negref);
+  return calculateVoltage(samples[channel]);
 }
 
 // convert sample to voltage
-float AD7689::calculateVoltage(uint16_t sample, float posRef, float negRef) const {
+float AD7689::calculateVoltage(uint16_t sample) const {
   //Serial.println("calculateVoltage:" + String(sample) +","+String(posref) +","+String(negref));
-  return (sample * (posRef - negRef) / TOTAL_STEPS);
+  return (sample * (posref - negref) / TOTAL_STEPS);
 }
 
 // convert sample to temperature
 float AD7689::calculateTemp(uint16_t temp) const {
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
+  // calibration is still necessary, so until done properly, this function returns the raw ADC value instead of temperature
+
+  // preliminary test results:
+  // raw values range from 4260 at room temperature to over 4400 when heated
+  // need calibration with ice cubes (= 0°C) and boiling methanol (= 64.7°C) or boiling ether (= 34.6°C)
   //return BASE_TEMP + ((temp * posref / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
   return temp;
 }
 
 // return absolute temperature
 float AD7689::acquireTemperature() {
-  if (micros() > (tempTime + framePeriod * (TOTAL_CHANNELS - 1)))  // temperature outdated, acquire a new one
-    readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
+  if (sequencerActive) {
+    // when the sequencer is active, check the time stamp of the last temperature sample and take a new measurement if outdated
+    if (micros() > (tempTime + framePeriod * (TOTAL_CHANNELS - 1)))  // temperature outdated, acquire a new one
+      readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
 
-  return calculateTemp(curTemp);
+    return calculateTemp(curTemp);
+  } else {
+    // sequencer isn't active yet, fetch tempreature directly
+    return readTemperature();
+  }
 }
 
 // constructor, intialize SPI and set SS pin
@@ -324,9 +342,9 @@ bool AD7689::selftest() {
   return (readback == toCommand(rb_conf));
 }
 
-// preliminary test results:
-// raw values range from 4260 at room temperature to over 4400 when heated
-// need calibration with ice cubes (= 0°C) and boiling methanol (= 64.7°C) or boiling ether (= 34.6°C)
+// this function is meant to be called if the ADC is *only* used as a temperature sensor
+// whenever actual ADC values are read, temperature is read along with it, and returned directly
+// this function disables the sequencer
 float AD7689::readTemperature() {
 
   AD7689_conf temp_conf = getADCConfig(false);
@@ -350,6 +368,7 @@ float AD7689::readTemperature() {
 
   // send the command
   shiftTransaction(toCommand(temp_conf), false, NULL);
+  sequencerActive = false;
 
   // skip second frame
   shiftTransaction(toCommand(getADCConfig(false)), false, NULL);
@@ -359,5 +378,5 @@ float AD7689::readTemperature() {
 
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
-  return BASE_TEMP + ((t * TEMP_REF / TOTAL_STEPS)- TEMP_BASE_VOLTAGE) * TEMP_RICO;
+  return calculateTemp(t);
 }
