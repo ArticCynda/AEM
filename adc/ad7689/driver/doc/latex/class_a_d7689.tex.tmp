@@ -1,0 +1,412 @@
+\hypertarget{class_a_d7689}{}\section{A\+D7689 Class Reference}
+\label{class_a_d7689}\index{A\+D7689@{A\+D7689}}
+
+
+{\ttfamily \#include $<$ad7689.\+h$>$}
+
+
+
+Collaboration diagram for A\+D7689\+:
+% FIG 0
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_a_d7689_a56b9feb7b3961863f4ad0fe0feb2ec71}{A\+D7689} (uint8\+\_\+t S\+Spin, uint8\+\_\+t number\+Channels=T\+O\+T\+A\+L\+\_\+\+C\+H\+A\+N\+N\+E\+LS)
+\item 
+void \hyperlink{class_a_d7689_a875167ce788a64b9826629612410a5a9}{set\+Reference} (uint8\+\_\+t ref\+Source, float pos\+Ref, uint8\+\_\+t polarity, bool differential)
+\item 
+void \hyperlink{class_a_d7689_a0353e9406e66fe624a5e07adb2901c7a}{enable\+Filtering} (bool on\+Off)
+\item 
+float \hyperlink{class_a_d7689_a90e16fc80e09479dba9b16f97d58bc9b}{acquire\+Channel} (uint8\+\_\+t channel, uint32\+\_\+t $\ast$time\+Stamp)
+\item 
+float \hyperlink{class_a_d7689_a390ada9d245ada58ac687d6d646167d5}{acquire\+Temperature} ()
+\item 
+bool \hyperlink{class_a_d7689_ae3954c97b1d8b4b3a8636b394b5be9f0}{selftest} (void)
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+uint16\+\_\+t \hyperlink{class_a_d7689_af7074cb81eed43a2c874e3e9a2426b2c}{shift\+Transaction} (uint16\+\_\+t command, bool readback, uint16\+\_\+t $\ast$rb\+\_\+cmd\+\_\+ptr)
+\item 
+uint16\+\_\+t \hyperlink{class_a_d7689_ac17b7fa11d3ceca0a19186719c7238ee}{to\+Command} (\hyperlink{struct_a_d7689__conf}{A\+D7689\+\_\+conf} cfg) const
+\item 
+\hyperlink{struct_a_d7689__conf}{A\+D7689\+\_\+conf} \hyperlink{class_a_d7689_a78eddc2f4da7ee135d7666952df9e3ac}{get\+A\+D\+C\+Config} (bool default\+\_\+config=false)
+\item 
+float \hyperlink{class_a_d7689_a3d26d1478eb821e8fc6726b14540de7b}{read\+Temperature} (void)
+\item 
+void \hyperlink{class_a_d7689_a167a6162f899ce7f70545679e4c16e18}{configure\+Sequencer} ()
+\item 
+void \hyperlink{class_a_d7689_ae2f327efadba727aa37336ed0be1f4a1}{read\+Channels} (uint8\+\_\+t channels, uint8\+\_\+t mode, uint16\+\_\+t $\ast$data, uint16\+\_\+t $\ast$temp)
+\item 
+float \hyperlink{class_a_d7689_af2a4f5dbc84996f69bda84f2bc07f30c}{calculate\+Voltage} (uint16\+\_\+t sample) const
+\item 
+float \hyperlink{class_a_d7689_a08607898287e6a6c41c1caedd21fd603}{calculate\+Temp} (uint16\+\_\+t temp) const
+\item 
+uint32\+\_\+t \hyperlink{class_a_d7689_a2b8d7543440e2ee02340fa98333a64e1}{init\+Sample\+Timing} (void)
+\item 
+void \hyperlink{class_a_d7689_a5002f6533d7c7b9ee5eb706b1ce5975a}{cycle\+Timing\+Benchmark} (void)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{struct_a_d7689__conf}{A\+D7689\+\_\+conf} \hyperlink{class_a_d7689_af2fa3af5535a45b15a05271b5f2eb0f5}{conf}
+\item 
+bool \hyperlink{class_a_d7689_aa5b25af1aa5466cde7f07828c3612335}{init\+\_\+complete} = false
+\item 
+const S\+P\+I\+Settings \hyperlink{class_a_d7689_a641fe4240708ac7ce2e281d0584bf413}{A\+D7689\+\_\+settings}
+\item 
+uint8\+\_\+t \hyperlink{class_a_d7689_a9afcd4745e9133b89c73bdc185957b57}{SS}
+\item 
+float \hyperlink{class_a_d7689_a2105f5451c2665984fdebe4ac2b3c0b1}{posref}
+\item 
+float \hyperlink{class_a_d7689_a0d4e8111bda12a9403afab1b302ee827}{negref}
+\item 
+uint32\+\_\+t \hyperlink{class_a_d7689_adb6d0dd3c8f6197231b560ed875686dc}{time\+Stamps} \mbox{[}T\+O\+T\+A\+L\+\_\+\+C\+H\+A\+N\+N\+E\+LS\mbox{]}
+\item 
+uint16\+\_\+t \hyperlink{class_a_d7689_a1e6c0a263002ab444381b1aac6d2df37}{samples} \mbox{[}T\+O\+T\+A\+L\+\_\+\+C\+H\+A\+N\+N\+E\+LS\mbox{]}
+\item 
+uint16\+\_\+t \hyperlink{class_a_d7689_a2eead42fa3f24d78ec361288bf7ad675}{frame\+Period}
+\item 
+uint16\+\_\+t \hyperlink{class_a_d7689_a11abb0798bfc9b3ad1ea84291d33b9a7}{cur\+Temp}
+\item 
+uint16\+\_\+t \hyperlink{class_a_d7689_a952d2ecef3cc42e64fed06cec85c2c57}{temp\+Time}
+\item 
+uint32\+\_\+t \hyperlink{class_a_d7689_a64165cc257bd9977cebb2872d2519db2}{last\+Seq\+End\+Time}
+\item 
+bool \hyperlink{class_a_d7689_a8c2c26d5571812cad79e609e09294fc3}{sequencer\+Active}
+\item 
+uint8\+\_\+t \hyperlink{class_a_d7689_a1d33eb4ed02205da990875f91cbf7655}{refsrc}
+\item 
+uint8\+\_\+t \hyperlink{class_a_d7689_a686590aa55c57e006ce8f0ddf0aa7935}{input\+Config}
+\item 
+uint8\+\_\+t \hyperlink{class_a_d7689_a1080e5af31245e1eaa51278e28d30c20}{input\+Count}
+\item 
+uint8\+\_\+t \hyperlink{class_a_d7689_a70b1228188f92b8d4e1fcedd53da51cc}{ref\+Config}
+\item 
+bool \hyperlink{class_a_d7689_a4a588ab4017c7b10ed754a57b21fa2c0}{filter\+Config}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Represents the Analog Devices \hyperlink{class_a_d7689}{A\+D7689}, an A\+DC with 8 channels and 16 bit resolution. 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_a_d7689_a56b9feb7b3961863f4ad0fe0feb2ec71}\label{class_a_d7689_a56b9feb7b3961863f4ad0fe0feb2ec71}} 
+\index{A\+D7689@{A\+D7689}!A\+D7689@{A\+D7689}}
+\index{A\+D7689@{A\+D7689}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{A\+D7689()}{AD7689()}}
+{\footnotesize\ttfamily A\+D7689\+::\+A\+D7689 (\begin{DoxyParamCaption}\item[{uint8\+\_\+t}]{S\+Spin,  }\item[{uint8\+\_\+t}]{number\+Channels = {\ttfamily TOTAL\+\_\+CHANNELS} }\end{DoxyParamCaption})}
+
+\mbox{[}A\+D7689\+::constructor Create an instance of an \hyperlink{class_a_d7689}{A\+D7689} A\+DC.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em S\+Spin} & The microcontroller pin to which the Slave Select of the A\+DC is connected. Must be a digital I/O pin. \\
+\hline
+{\em number\+Channels} & The highest channel in use for the application, a value between 1 and 8. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Instance of the A\+DC. 
+\end{DoxyReturn}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{class_a_d7689_a90e16fc80e09479dba9b16f97d58bc9b}\label{class_a_d7689_a90e16fc80e09479dba9b16f97d58bc9b}} 
+\index{A\+D7689@{A\+D7689}!acquire\+Channel@{acquire\+Channel}}
+\index{acquire\+Channel@{acquire\+Channel}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{acquire\+Channel()}{acquireChannel()}}
+{\footnotesize\ttfamily float A\+D7689\+::acquire\+Channel (\begin{DoxyParamCaption}\item[{uint8\+\_\+t}]{channel,  }\item[{uint32\+\_\+t $\ast$}]{time\+Stamp }\end{DoxyParamCaption})}
+
+\mbox{[}\hyperlink{class_a_d7689_a90e16fc80e09479dba9b16f97d58bc9b}{A\+D7689\+::acquire\+Channel} Sample analog input signal along with its time stamp.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em channel} & The channel to sample, between 1 and 8. \\
+\hline
+{\em time\+Stamp} & A pointer to a variable in which the time stamp should be stored. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Measured voltage. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_a390ada9d245ada58ac687d6d646167d5}\label{class_a_d7689_a390ada9d245ada58ac687d6d646167d5}} 
+\index{A\+D7689@{A\+D7689}!acquire\+Temperature@{acquire\+Temperature}}
+\index{acquire\+Temperature@{acquire\+Temperature}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{acquire\+Temperature()}{acquireTemperature()}}
+{\footnotesize\ttfamily float A\+D7689\+::acquire\+Temperature (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{[}\hyperlink{class_a_d7689_a390ada9d245ada58ac687d6d646167d5}{A\+D7689\+::acquire\+Temperature} Measure temperature.\mbox{]} \begin{DoxyReturn}{Returns}
+Temperature in °C. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_a08607898287e6a6c41c1caedd21fd603}\label{class_a_d7689_a08607898287e6a6c41c1caedd21fd603}} 
+\index{A\+D7689@{A\+D7689}!calculate\+Temp@{calculate\+Temp}}
+\index{calculate\+Temp@{calculate\+Temp}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{calculate\+Temp()}{calculateTemp()}}
+{\footnotesize\ttfamily float A\+D7689\+::calculate\+Temp (\begin{DoxyParamCaption}\item[{uint16\+\_\+t}]{temp }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_a08607898287e6a6c41c1caedd21fd603}{A\+D7689\+::calculate\+Temp} Calculate the A\+DC temperature based on raw A\+DC input readin, using internal voltage reference.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em temp} & The sample to convert. A positive integer between 0 and 65535. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Temperature in °C. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_af2a4f5dbc84996f69bda84f2bc07f30c}\label{class_a_d7689_af2a4f5dbc84996f69bda84f2bc07f30c}} 
+\index{A\+D7689@{A\+D7689}!calculate\+Voltage@{calculate\+Voltage}}
+\index{calculate\+Voltage@{calculate\+Voltage}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{calculate\+Voltage()}{calculateVoltage()}}
+{\footnotesize\ttfamily float A\+D7689\+::calculate\+Voltage (\begin{DoxyParamCaption}\item[{uint16\+\_\+t}]{sample }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_af2a4f5dbc84996f69bda84f2bc07f30c}{A\+D7689\+::calculate\+Voltage} Calculate an absolute or relative voltage based on raw A\+DC input reading and specified voltage reference(s).\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em sample} & The sample to convert. A positive integer between 0 and 65535. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Calculated voltage. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_a167a6162f899ce7f70545679e4c16e18}\label{class_a_d7689_a167a6162f899ce7f70545679e4c16e18}} 
+\index{A\+D7689@{A\+D7689}!configure\+Sequencer@{configure\+Sequencer}}
+\index{configure\+Sequencer@{configure\+Sequencer}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{configure\+Sequencer()}{configureSequencer()}}
+{\footnotesize\ttfamily void A\+D7689\+::configure\+Sequencer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_a167a6162f899ce7f70545679e4c16e18}{A\+D7689\+::configure\+Sequencer} Enables the automatic channel sequencer of the A\+DC and turn on temperature measurements.\mbox{]} \mbox{\Hypertarget{class_a_d7689_a5002f6533d7c7b9ee5eb706b1ce5975a}\label{class_a_d7689_a5002f6533d7c7b9ee5eb706b1ce5975a}} 
+\index{A\+D7689@{A\+D7689}!cycle\+Timing\+Benchmark@{cycle\+Timing\+Benchmark}}
+\index{cycle\+Timing\+Benchmark@{cycle\+Timing\+Benchmark}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{cycle\+Timing\+Benchmark()}{cycleTimingBenchmark()}}
+{\footnotesize\ttfamily void A\+D7689\+::cycle\+Timing\+Benchmark (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_a5002f6533d7c7b9ee5eb706b1ce5975a}{A\+D7689\+::cycle\+Timing\+Benchmark} Measures the time required to transceive a complete 16 bit frame, using the current C\+PU clock speed. This is required to generate accurate time stamps, if desired. Should be called once when starting the A\+DC, or whenever the clock frequency is changed (i.\+e. dynamic clock switching).\mbox{]} \mbox{\Hypertarget{class_a_d7689_a0353e9406e66fe624a5e07adb2901c7a}\label{class_a_d7689_a0353e9406e66fe624a5e07adb2901c7a}} 
+\index{A\+D7689@{A\+D7689}!enable\+Filtering@{enable\+Filtering}}
+\index{enable\+Filtering@{enable\+Filtering}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{enable\+Filtering()}{enableFiltering()}}
+{\footnotesize\ttfamily void A\+D7689\+::enable\+Filtering (\begin{DoxyParamCaption}\item[{bool}]{on\+Off }\end{DoxyParamCaption})}
+
+\mbox{[}\hyperlink{class_a_d7689_a0353e9406e66fe624a5e07adb2901c7a}{A\+D7689\+::enable\+Filtering} Configure filtering to reduce bandwidth to 25\%.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em on\+Off} & True to turn on filter, False for full bandwidth. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_a_d7689_a78eddc2f4da7ee135d7666952df9e3ac}\label{class_a_d7689_a78eddc2f4da7ee135d7666952df9e3ac}} 
+\index{A\+D7689@{A\+D7689}!get\+A\+D\+C\+Config@{get\+A\+D\+C\+Config}}
+\index{get\+A\+D\+C\+Config@{get\+A\+D\+C\+Config}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{get\+A\+D\+C\+Config()}{getADCConfig()}}
+{\footnotesize\ttfamily \hyperlink{struct_a_d7689__conf}{A\+D7689\+\_\+conf} A\+D7689\+::get\+A\+D\+C\+Config (\begin{DoxyParamCaption}\item[{bool}]{default\+\_\+config = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_a78eddc2f4da7ee135d7666952df9e3ac}{A\+D7689\+::get\+A\+D\+C\+Config} Assemble user settings into a configuration for the A\+DC, or return a default configuration.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em default\+\_\+config} & True if the default configuration should be returned, False if user settings are to be used. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Configuration set for the A\+DC. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_a2b8d7543440e2ee02340fa98333a64e1}\label{class_a_d7689_a2b8d7543440e2ee02340fa98333a64e1}} 
+\index{A\+D7689@{A\+D7689}!init\+Sample\+Timing@{init\+Sample\+Timing}}
+\index{init\+Sample\+Timing@{init\+Sample\+Timing}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{init\+Sample\+Timing()}{initSampleTiming()}}
+{\footnotesize\ttfamily uint32\+\_\+t A\+D7689\+::init\+Sample\+Timing (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_a2b8d7543440e2ee02340fa98333a64e1}{A\+D7689\+::init\+Sample\+Timing} Reset time stamps for all samples and force an update sequence at the start of the next read command.\mbox{]} \begin{DoxyReturn}{Returns}
+The current M\+CU core time. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_ae2f327efadba727aa37336ed0be1f4a1}\label{class_a_d7689_ae2f327efadba727aa37336ed0be1f4a1}} 
+\index{A\+D7689@{A\+D7689}!read\+Channels@{read\+Channels}}
+\index{read\+Channels@{read\+Channels}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{read\+Channels()}{readChannels()}}
+{\footnotesize\ttfamily void A\+D7689\+::read\+Channels (\begin{DoxyParamCaption}\item[{uint8\+\_\+t}]{channels,  }\item[{uint8\+\_\+t}]{mode,  }\item[{uint16\+\_\+t $\ast$}]{data,  }\item[{uint16\+\_\+t $\ast$}]{temp }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_ae2f327efadba727aa37336ed0be1f4a1}{A\+D7689\+::read\+Channels} Reads voltages as raw 16 bit A\+DC samples from selected channels. Temperature also read.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em channels} & Last channel to read, starting at 0 to max. 7, in differential mode always read even number of channels. \\
+\hline
+{\em mode} & Input signal configuration mode\+: U\+N\+I\+P\+O\+L\+A\+R\+\_\+\+M\+O\+DE, B\+I\+P\+O\+L\+A\+R\+\_\+\+M\+O\+DE or D\+I\+F\+F\+E\+R\+E\+N\+T\+I\+A\+L\+\_\+\+M\+O\+DE. \\
+\hline
+{\em data} & Pointer to a vector holding the data, length depending on channels and mode. \\
+\hline
+{\em temp} & Pointer to a variable holding the temperature. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_a_d7689_a3d26d1478eb821e8fc6726b14540de7b}\label{class_a_d7689_a3d26d1478eb821e8fc6726b14540de7b}} 
+\index{A\+D7689@{A\+D7689}!read\+Temperature@{read\+Temperature}}
+\index{read\+Temperature@{read\+Temperature}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{read\+Temperature()}{readTemperature()}}
+{\footnotesize\ttfamily float A\+D7689\+::read\+Temperature (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_a3d26d1478eb821e8fc6726b14540de7b}{A\+D7689\+::read\+Temperature} Reads the temperature of the A\+DC. This function is meant to be called if the A\+DC is {\itshape only} used as a temperature sensor. Whenever actual A\+DC values are read, temperature is read along with it, and returned directly. This function disables the sequencer.\mbox{]} \begin{DoxyReturn}{Returns}
+Internal temperature of the A\+DC in °C. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_ae3954c97b1d8b4b3a8636b394b5be9f0}\label{class_a_d7689_ae3954c97b1d8b4b3a8636b394b5be9f0}} 
+\index{A\+D7689@{A\+D7689}!selftest@{selftest}}
+\index{selftest@{selftest}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{selftest()}{selftest()}}
+{\footnotesize\ttfamily bool A\+D7689\+::selftest (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+\mbox{[}\hyperlink{class_a_d7689_ae3954c97b1d8b4b3a8636b394b5be9f0}{A\+D7689\+::selftest} Verifies that the A\+DC is properly connected and operational\mbox{]} \begin{DoxyReturn}{Returns}
+True if the A\+DC works properly, False if errors were encountered. Check S\+PI connections if selftest fails repeatedly. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_a875167ce788a64b9826629612410a5a9}\label{class_a_d7689_a875167ce788a64b9826629612410a5a9}} 
+\index{A\+D7689@{A\+D7689}!set\+Reference@{set\+Reference}}
+\index{set\+Reference@{set\+Reference}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{set\+Reference()}{setReference()}}
+{\footnotesize\ttfamily void A\+D7689\+::set\+Reference (\begin{DoxyParamCaption}\item[{uint8\+\_\+t}]{ref\+Source,  }\item[{float}]{pos\+Ref,  }\item[{uint8\+\_\+t}]{polarity,  }\item[{bool}]{differential }\end{DoxyParamCaption})}
+
+\mbox{[}\hyperlink{class_a_d7689_a875167ce788a64b9826629612410a5a9}{A\+D7689\+::set\+Reference} Configure the voltage references.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em ref\+Source} & Reference source\+: R\+E\+F\+\_\+\+I\+N\+T\+E\+R\+N\+AL, R\+E\+F\+\_\+\+E\+X\+T\+E\+R\+N\+AL, R\+E\+F\+\_\+\+G\+ND or R\+E\+F\+\_\+\+C\+OM. \\
+\hline
+{\em pos\+Ref} & Positive reference voltage. \\
+\hline
+{\em polarity} & Polarity of the signal source\+: U\+N\+I\+P\+O\+L\+A\+R\+\_\+\+M\+O\+DE, B\+I\+P\+O\+L\+A\+R\+\_\+\+M\+O\+DE or D\+I\+F\+F\+E\+R\+E\+N\+T\+I\+A\+L\+\_\+\+M\+O\+DE. \\
+\hline
+{\em differential} & Indicates if the inputs are differential. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_a_d7689_af7074cb81eed43a2c874e3e9a2426b2c}\label{class_a_d7689_af7074cb81eed43a2c874e3e9a2426b2c}} 
+\index{A\+D7689@{A\+D7689}!shift\+Transaction@{shift\+Transaction}}
+\index{shift\+Transaction@{shift\+Transaction}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{shift\+Transaction()}{shiftTransaction()}}
+{\footnotesize\ttfamily uint16\+\_\+t A\+D7689\+::shift\+Transaction (\begin{DoxyParamCaption}\item[{uint16\+\_\+t}]{command,  }\item[{bool}]{readback,  }\item[{uint16\+\_\+t $\ast$}]{rb\+\_\+cmd\+\_\+ptr }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_af7074cb81eed43a2c874e3e9a2426b2c}{A\+D7689\+::shift\+Transaction} Sends a 16 bit word to the A\+DC, and simultaneously captures the response. A\+DC responses lag 2 frames behind on commands. If readback is active, 32 bits will be captured instead of 16.\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em command} & The 16 bit command to send to the A\+DC. \\
+\hline
+{\em readback} & True if readback is desired, otherwise False. \\
+\hline
+{\em rb\+\_\+cmd\+\_\+ptr} & A pointer to a variable to store the readback response. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A 16 bit word received from the A\+DC, as response to the command from 2 frames ago. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_a_d7689_ac17b7fa11d3ceca0a19186719c7238ee}\label{class_a_d7689_ac17b7fa11d3ceca0a19186719c7238ee}} 
+\index{A\+D7689@{A\+D7689}!to\+Command@{to\+Command}}
+\index{to\+Command@{to\+Command}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{to\+Command()}{toCommand()}}
+{\footnotesize\ttfamily uint16\+\_\+t A\+D7689\+::to\+Command (\begin{DoxyParamCaption}\item[{\hyperlink{struct_a_d7689__conf}{A\+D7689\+\_\+conf}}]{cfg }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{[}\hyperlink{class_a_d7689_ac17b7fa11d3ceca0a19186719c7238ee}{A\+D7689\+::to\+Command} Converts a command structure to a 16 bit word that can be transmitted over S\+PI\mbox{]} 
+\begin{DoxyParams}{Parameters}
+{\em cfg} & A configuration set of type \hyperlink{struct_a_d7689__conf}{A\+D7689\+\_\+conf} holding the configuration settings. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A 16 bit configuration command that can be sent to the A\+DC with shift\+Transaction. 
+\end{DoxyReturn}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{class_a_d7689_a641fe4240708ac7ce2e281d0584bf413}\label{class_a_d7689_a641fe4240708ac7ce2e281d0584bf413}} 
+\index{A\+D7689@{A\+D7689}!A\+D7689\+\_\+settings@{A\+D7689\+\_\+settings}}
+\index{A\+D7689\+\_\+settings@{A\+D7689\+\_\+settings}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{A\+D7689\+\_\+settings}{AD7689\_settings}}
+{\footnotesize\ttfamily const S\+P\+I\+Settings A\+D7689\+::\+A\+D7689\+\_\+settings\hspace{0.3cm}{\ttfamily [protected]}}
+
+S\+PI connection settings. A\+DC uses C\+P\+OL = 0 and C\+P\+HA = 0 \mbox{\Hypertarget{class_a_d7689_af2fa3af5535a45b15a05271b5f2eb0f5}\label{class_a_d7689_af2fa3af5535a45b15a05271b5f2eb0f5}} 
+\index{A\+D7689@{A\+D7689}!conf@{conf}}
+\index{conf@{conf}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{conf}{conf}}
+{\footnotesize\ttfamily \hyperlink{struct_a_d7689__conf}{A\+D7689\+\_\+conf} A\+D7689\+::conf\hspace{0.3cm}{\ttfamily [protected]}}
+
+Configuration settings for the A\+DC. \mbox{\Hypertarget{class_a_d7689_a11abb0798bfc9b3ad1ea84291d33b9a7}\label{class_a_d7689_a11abb0798bfc9b3ad1ea84291d33b9a7}} 
+\index{A\+D7689@{A\+D7689}!cur\+Temp@{cur\+Temp}}
+\index{cur\+Temp@{cur\+Temp}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{cur\+Temp}{curTemp}}
+{\footnotesize\ttfamily uint16\+\_\+t A\+D7689\+::cur\+Temp\hspace{0.3cm}{\ttfamily [protected]}}
+
+Last temperature measurement. \mbox{\Hypertarget{class_a_d7689_a4a588ab4017c7b10ed754a57b21fa2c0}\label{class_a_d7689_a4a588ab4017c7b10ed754a57b21fa2c0}} 
+\index{A\+D7689@{A\+D7689}!filter\+Config@{filter\+Config}}
+\index{filter\+Config@{filter\+Config}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{filter\+Config}{filterConfig}}
+{\footnotesize\ttfamily bool A\+D7689\+::filter\+Config\hspace{0.3cm}{\ttfamily [protected]}}
+
+Input filter configuration. \mbox{\Hypertarget{class_a_d7689_a2eead42fa3f24d78ec361288bf7ad675}\label{class_a_d7689_a2eead42fa3f24d78ec361288bf7ad675}} 
+\index{A\+D7689@{A\+D7689}!frame\+Period@{frame\+Period}}
+\index{frame\+Period@{frame\+Period}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{frame\+Period}{framePeriod}}
+{\footnotesize\ttfamily uint16\+\_\+t A\+D7689\+::frame\+Period\hspace{0.3cm}{\ttfamily [protected]}}
+
+Length of a single frame, in microseconds. \mbox{\Hypertarget{class_a_d7689_aa5b25af1aa5466cde7f07828c3612335}\label{class_a_d7689_aa5b25af1aa5466cde7f07828c3612335}} 
+\index{A\+D7689@{A\+D7689}!init\+\_\+complete@{init\+\_\+complete}}
+\index{init\+\_\+complete@{init\+\_\+complete}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{init\+\_\+complete}{init\_complete}}
+{\footnotesize\ttfamily bool A\+D7689\+::init\+\_\+complete = false\hspace{0.3cm}{\ttfamily [protected]}}
+
+A value indicating if the initialization sequence has been completed. \mbox{\Hypertarget{class_a_d7689_a686590aa55c57e006ce8f0ddf0aa7935}\label{class_a_d7689_a686590aa55c57e006ce8f0ddf0aa7935}} 
+\index{A\+D7689@{A\+D7689}!input\+Config@{input\+Config}}
+\index{input\+Config@{input\+Config}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{input\+Config}{inputConfig}}
+{\footnotesize\ttfamily uint8\+\_\+t A\+D7689\+::input\+Config\hspace{0.3cm}{\ttfamily [protected]}}
+
+Input channel configuration. \mbox{\Hypertarget{class_a_d7689_a1080e5af31245e1eaa51278e28d30c20}\label{class_a_d7689_a1080e5af31245e1eaa51278e28d30c20}} 
+\index{A\+D7689@{A\+D7689}!input\+Count@{input\+Count}}
+\index{input\+Count@{input\+Count}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{input\+Count}{inputCount}}
+{\footnotesize\ttfamily uint8\+\_\+t A\+D7689\+::input\+Count\hspace{0.3cm}{\ttfamily [protected]}}
+
+Number of input channels. Even for differential mode. \mbox{\Hypertarget{class_a_d7689_a64165cc257bd9977cebb2872d2519db2}\label{class_a_d7689_a64165cc257bd9977cebb2872d2519db2}} 
+\index{A\+D7689@{A\+D7689}!last\+Seq\+End\+Time@{last\+Seq\+End\+Time}}
+\index{last\+Seq\+End\+Time@{last\+Seq\+End\+Time}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{last\+Seq\+End\+Time}{lastSeqEndTime}}
+{\footnotesize\ttfamily uint32\+\_\+t A\+D7689\+::last\+Seq\+End\+Time\hspace{0.3cm}{\ttfamily [protected]}}
+
+Time stamp of the end of the last data acquisition sequence. \mbox{\Hypertarget{class_a_d7689_a0d4e8111bda12a9403afab1b302ee827}\label{class_a_d7689_a0d4e8111bda12a9403afab1b302ee827}} 
+\index{A\+D7689@{A\+D7689}!negref@{negref}}
+\index{negref@{negref}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{negref}{negref}}
+{\footnotesize\ttfamily float A\+D7689\+::negref\hspace{0.3cm}{\ttfamily [protected]}}
+
+Negative voltage reference, either C\+OM or ground. \mbox{\Hypertarget{class_a_d7689_a2105f5451c2665984fdebe4ac2b3c0b1}\label{class_a_d7689_a2105f5451c2665984fdebe4ac2b3c0b1}} 
+\index{A\+D7689@{A\+D7689}!posref@{posref}}
+\index{posref@{posref}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{posref}{posref}}
+{\footnotesize\ttfamily float A\+D7689\+::posref\hspace{0.3cm}{\ttfamily [protected]}}
+
+Positive voltage reference for unipolar or bipolar mode. \mbox{\Hypertarget{class_a_d7689_a70b1228188f92b8d4e1fcedd53da51cc}\label{class_a_d7689_a70b1228188f92b8d4e1fcedd53da51cc}} 
+\index{A\+D7689@{A\+D7689}!ref\+Config@{ref\+Config}}
+\index{ref\+Config@{ref\+Config}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{ref\+Config}{refConfig}}
+{\footnotesize\ttfamily uint8\+\_\+t A\+D7689\+::ref\+Config\hspace{0.3cm}{\ttfamily [protected]}}
+
+Voltage reference configuration. \mbox{\Hypertarget{class_a_d7689_a1d33eb4ed02205da990875f91cbf7655}\label{class_a_d7689_a1d33eb4ed02205da990875f91cbf7655}} 
+\index{A\+D7689@{A\+D7689}!refsrc@{refsrc}}
+\index{refsrc@{refsrc}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{refsrc}{refsrc}}
+{\footnotesize\ttfamily uint8\+\_\+t A\+D7689\+::refsrc\hspace{0.3cm}{\ttfamily [protected]}}
+
+Positive voltage eference source. \mbox{\Hypertarget{class_a_d7689_a1e6c0a263002ab444381b1aac6d2df37}\label{class_a_d7689_a1e6c0a263002ab444381b1aac6d2df37}} 
+\index{A\+D7689@{A\+D7689}!samples@{samples}}
+\index{samples@{samples}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{samples}{samples}}
+{\footnotesize\ttfamily uint16\+\_\+t A\+D7689\+::samples\mbox{[}T\+O\+T\+A\+L\+\_\+\+C\+H\+A\+N\+N\+E\+LS\mbox{]}\hspace{0.3cm}{\ttfamily [protected]}}
+
+Last set of samples for each channel. \mbox{\Hypertarget{class_a_d7689_a8c2c26d5571812cad79e609e09294fc3}\label{class_a_d7689_a8c2c26d5571812cad79e609e09294fc3}} 
+\index{A\+D7689@{A\+D7689}!sequencer\+Active@{sequencer\+Active}}
+\index{sequencer\+Active@{sequencer\+Active}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{sequencer\+Active}{sequencerActive}}
+{\footnotesize\ttfamily bool A\+D7689\+::sequencer\+Active\hspace{0.3cm}{\ttfamily [protected]}}
+
+True when the sequencer is initialized, false at start-\/up or during self tests \mbox{\Hypertarget{class_a_d7689_a9afcd4745e9133b89c73bdc185957b57}\label{class_a_d7689_a9afcd4745e9133b89c73bdc185957b57}} 
+\index{A\+D7689@{A\+D7689}!SS@{SS}}
+\index{SS@{SS}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{SS}{SS}}
+{\footnotesize\ttfamily uint8\+\_\+t A\+D7689\+::\+SS\hspace{0.3cm}{\ttfamily [protected]}}
+
+M\+CU pin that drives the Slave Select pin of the A\+DC. Must be a digital IO pin. \mbox{\Hypertarget{class_a_d7689_a952d2ecef3cc42e64fed06cec85c2c57}\label{class_a_d7689_a952d2ecef3cc42e64fed06cec85c2c57}} 
+\index{A\+D7689@{A\+D7689}!temp\+Time@{temp\+Time}}
+\index{temp\+Time@{temp\+Time}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{temp\+Time}{tempTime}}
+{\footnotesize\ttfamily uint16\+\_\+t A\+D7689\+::temp\+Time\hspace{0.3cm}{\ttfamily [protected]}}
+
+Time stamp for last temperature measurement. \mbox{\Hypertarget{class_a_d7689_adb6d0dd3c8f6197231b560ed875686dc}\label{class_a_d7689_adb6d0dd3c8f6197231b560ed875686dc}} 
+\index{A\+D7689@{A\+D7689}!time\+Stamps@{time\+Stamps}}
+\index{time\+Stamps@{time\+Stamps}!A\+D7689@{A\+D7689}}
+\subsubsection{\texorpdfstring{time\+Stamps}{timeStamps}}
+{\footnotesize\ttfamily uint32\+\_\+t A\+D7689\+::time\+Stamps\mbox{[}T\+O\+T\+A\+L\+\_\+\+C\+H\+A\+N\+N\+E\+LS\mbox{]}\hspace{0.3cm}{\ttfamily [protected]}}
+
+Last set of time stamps for each channel. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+adc/ad7689/driver/src/ad7689.\+h\item 
+adc/ad7689/driver/src/ad7689.\+cpp\end{DoxyCompactItemize}

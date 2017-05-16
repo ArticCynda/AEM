@@ -2,9 +2,10 @@
 // unipolar configuration, 8 channels, 4.096V internal positive voltage reference, negative referenced to ground
 
 #include "../../../driver/src/ad7689.h"
+#include <SPI.h>
 
 AD7689 *ADC;
-const uint8_t AD7689_SS_pin  10;
+const uint8_t AD7689_SS_pin = 10;
 uint8_t ch_cnt = 0; // channel counter
 
 void setup() {
@@ -19,7 +20,7 @@ void setup() {
   {
     Serial.println("AD7689 connected and ready");
   } else {
-    Serial.println("Error: couldn't connect to AD7689. Check wiring.")
+    Serial.println("Error: couldn't connect to AD7689. Check wiring.");
     while (1);
   }
 }

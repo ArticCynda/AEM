@@ -6,7 +6,11 @@
 // Code released under MIT license blah blah blah, use it however you wish, if it has been useful then let me know about your project at yannick [dot] verbelen [at] inventati [dot] org
 
 #include "ad7689.h"
+#include <SPI.h>
 
+/**
+ * [AD7689::configureSequencer Enables the automatic channel sequencer of the ADC and turn on temperature measurements.]
+ */
 void AD7689::configureSequencer() {
   // load a new configuration with the setting specified by the user
   AD7689_conf sequence = getADCConfig();
@@ -32,7 +36,13 @@ void AD7689::configureSequencer() {
   sequencerActive = true;
 }
 
-// configure the voltage reference
+/**
+ * [AD7689::setReference Configure the voltage references.]
+ * @param refSource    Reference source: REF_INTERNAL, REF_EXTERNAL, REF_GND or REF_COM.
+ * @param posRef       Positive reference voltage.
+ * @param polarity     Polarity of the signal source: UNIPOLAR_MODE, BIPOLAR_MODE or DIFFERENTIAL_MODE.
+ * @param differential Indicates if the inputs are differential.
+ */
 void AD7689::setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential) {
 
     // set input configuration and negative reference
@@ -82,13 +92,21 @@ void AD7689::setReference(uint8_t refSource, float posRef, uint8_t polarity, boo
 
 }
 
-// enable filtering to reduce bandwidth to 25%
+/**
+ * [AD7689::enableFiltering Configure filtering to reduce bandwidth to 25%.]
+ * @param onOff True to turn on filter, False for full bandwidth.
+ */
 void AD7689::enableFiltering(bool onOff) {
   filterConfig = onOff;
 }
 
 
-// calculate a voltage from the sample using reference voltages
+/**
+ * [AD7689::acquireChannel Sample analog input signal along with its time stamp.]
+ * @param  channel   The channel to sample, between 1 and 8.
+ * @param  timeStamp A pointer to a variable in which the time stamp should be stored.
+ * @return           Measured voltage.
+ */
 float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
   if (micros() > (timeStamps[channel] + framePeriod * (TOTAL_CHANNELS - 1))) { // sequence outdated, acquire a new one
     uint8_t cycles = 1;
@@ -104,13 +122,20 @@ float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
   return calculateVoltage(samples[channel]);
 }
 
-// convert sample to voltage
+/**
+ * [AD7689::calculateVoltage Calculate an absolute or relative voltage based on raw ADC input reading and specified voltage reference(s).]
+ * @param  sample The sample to convert. A positive integer between 0 and 65535.
+ * @return        Calculated voltage.
+ */
 float AD7689::calculateVoltage(uint16_t sample) const {
-  //Serial.println("calculateVoltage:" + String(sample) +","+String(posref) +","+String(negref));
   return (sample * (posref - negref) / TOTAL_STEPS);
 }
 
-// convert sample to temperature
+/**
+ * [AD7689::calculateTemp Calculate the ADC temperature based on raw ADC input readin, using internal voltage reference.]
+ * @param  temp The sample to convert. A positive integer between 0 and 65535.
+ * @return      Temperature in °C.
+ */
 float AD7689::calculateTemp(uint16_t temp) const {
   // calculate temperature from ADC value:
   // output is 283 mV @ 25°C, and sensitivity of 1 mV/°C
@@ -123,7 +148,10 @@ float AD7689::calculateTemp(uint16_t temp) const {
   return temp;
 }
 
-// return absolute temperature
+/**
+ * [AD7689::acquireTemperature Measure temperature.]
+ * @return Temperature in °C.
+ */
 float AD7689::acquireTemperature() {
   if (sequencerActive) {
     // when the sequencer is active, check the time stamp of the last temperature sample and take a new measurement if outdated
@@ -142,6 +170,13 @@ float AD7689::acquireTemperature() {
 // MODE0: SCLK idle low (CPOL=0), MOSI read on rising edge (CPHI=0)
 // use CPHA = CPOL = 0
 // SPI runs at max CPU clock as long as it is below 38 MHz
+
+/**
+ * [AD7689::constructor Create an instance of an AD7689 ADC.]
+ * @param SSpin           The microcontroller pin to which the Slave Select of the ADC is connected. Must be a digital I/O pin.
+ * @param numberChannels  The highest channel in use for the application, a value between 1 and 8.
+ * @return                Instance of the ADC.
+ */
 AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : F_CPU, MSBFIRST, SPI_MODE0) ,
                                                         SS(SSpin),
                                                         inputCount(numberChannels)  {
@@ -168,9 +203,11 @@ AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >
   setReference(REF_INTERNAL, INTERNAL_4096, UNIPOLAR_MODE, false);
 }
 
-// measures the time required to transceive a complete 16 bit frame, using the current CPU clock speed
-// this is required to generate accurate time stamps
-// should be called once when starting the ADC, or whenever the clock frequency is changed (i.e. dynamic clock switching)
+/**
+ * [AD7689::cycleTimingBenchmark Measures the time required to transceive a complete 16 bit frame, using the current CPU clock speed.
+ * This is required to generate accurate time stamps, if desired.
+ * Should be called once when starting the ADC, or whenever the clock frequency is changed (i.e. dynamic clock switching).]
+ */
 void AD7689::cycleTimingBenchmark() {
 
   uint32_t startTime = micros(); // record current CPU time
@@ -184,12 +221,13 @@ void AD7689::cycleTimingBenchmark() {
   lastSeqEndTime = startTime;
 }
 
-// reads voltages from selected channels, always read temperature too
-// params:
-//   channels: last channel to read (starting at 0, max 7, in differential mode always read even number of channels)
-//   mode: unipolar, bipolar or differential
-//   data: pointer to a vector holding the data, length depending on channels and mode
-//   temp: pointer to a variable holding the temperature
+/**
+ * [AD7689::readChannels Reads voltages as raw 16 bit ADC samples from selected channels. Temperature also read.]
+ * @param channels Last channel to read, starting at 0 to max. 7, in differential mode always read even number of channels.
+ * @param mode     Input signal configuration mode: UNIPOLAR_MODE, BIPOLAR_MODE or DIFFERENTIAL_MODE.
+ * @param data     Pointer to a vector holding the data, length depending on channels and mode.
+ * @param temp     Pointer to a variable holding the temperature.
+ */
 void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint16_t* temp) {
 
   // if the sequencer insn't active yet, enable it
@@ -221,7 +259,10 @@ void AD7689::readChannels(uint8_t channels, uint8_t mode, uint16_t data[], uint1
   lastSeqEndTime = micros();
 }
 
-// reset time stamps for all samples and force an update sequence at the start of the next read command
+/**
+ * [AD7689::initSampleTiming Reset time stamps for all samples and force an update sequence at the start of the next read command.]
+ * @return The current MCU core time.
+ */
 uint32_t AD7689::initSampleTiming() {
   uint32_t curTime = micros(); // retrieve microcontroller run time in microseconds
 
@@ -237,6 +278,15 @@ uint32_t AD7689::initSampleTiming() {
    ADC responses lag 2 frames behind on commands
    if readback is activated, 32 bits will be captured instead of 16
 */
+/**
+ * [AD7689::shiftTransaction Sends a 16 bit word to the ADC, and simultaneously captures the response.
+ * ADC responses lag 2 frames behind on commands.
+ * If readback is active, 32 bits will be captured instead of 16.]
+ * @param  command    The 16 bit command to send to the ADC.
+ * @param  readback   True if readback is desired, otherwise False.
+ * @param  rb_cmd_ptr A pointer to a variable to store the readback response.
+ * @return            A 16 bit word received from the ADC, as response to the command from 2 frames ago.
+ */
 uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr) {
 
   // one time start-up sequence
@@ -277,6 +327,11 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
 }
 
 // converts a command structure to a 16 bit word that can be transmitted over SPI
+/**
+ * [AD7689::toCommand Converts a command structure to a 16 bit word that can be transmitted over SPI]
+ * @param  cfg A configuration set of type AD7689_conf holding the configuration settings.
+ * @return     A 16 bit configuration command that can be sent to the ADC with shiftTransaction.
+ */
 uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 
   // build 14 bit configuration word
@@ -296,6 +351,11 @@ uint16_t AD7689::toCommand(AD7689_conf cfg) const {
 }
 
 // assemble user settings into a configuration for the ADC, or return a default configuration
+/**
+ * [AD7689::getADCConfig Assemble user settings into a configuration for the ADC, or return a default configuration.]
+ * @param  default_config True if the default configuration should be returned, False if user settings are to be used.
+ * @return                Configuration set for the ADC.
+ */
 AD7689_conf AD7689::getADCConfig(bool default_config) {
   AD7689_conf def;
 
@@ -321,6 +381,10 @@ AD7689_conf AD7689::getADCConfig(bool default_config) {
 }
 
 // returns a value indicating if the ADC is properly connected and responding
+/**
+ * [AD7689::selftest Verifies that the ADC is properly connected and operational]
+ * @return True if the ADC works properly, False if errors were encountered. Check SPI connections if selftest fails repeatedly.
+ */
 bool AD7689::selftest() {
   // ADC will be tested with its readback function, which reads back a previous command
   // this process takes 3 cycles
@@ -342,21 +406,19 @@ bool AD7689::selftest() {
   return (readback == toCommand(rb_conf));
 }
 
-// this function is meant to be called if the ADC is *only* used as a temperature sensor
-// whenever actual ADC values are read, temperature is read along with it, and returned directly
-// this function disables the sequencer
+/**
+ * [AD7689::readTemperature Reads the temperature of the ADC.
+ * This function is meant to be called if the ADC is *only* used as a temperature sensor.
+ * Whenever actual ADC values are read, temperature is read along with it, and returned directly.
+ * This function disables the sequencer.]
+ * @return Internal temperature of the ADC in °C.
+ */
 float AD7689::readTemperature() {
 
   AD7689_conf temp_conf = getADCConfig(false);
 
   // set to use internal reference voltage
   // this automatically turns on the temperature sensor
-  /*
-  if (TEMP_REF == INTERNAL_25)
-    temp_conf.REF_conf = INT_REF_25;
-  else
-    temp_conf.REF_conf = INT_REF_4096;
-    */
   temp_conf.REF_conf = TEMP_REF == INTERNAL_25 ? INT_REF_25 : INT_REF_4096;
 
   // configure MUX for temperature sensor

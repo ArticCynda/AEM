@@ -7,6 +7,7 @@
 #include <WProgram.h>
 #endif
 
+// required for SPI communication
 #include <SPI.h>
 
 // input configuration: bipolar/unipolar, single ended or differential
@@ -63,70 +64,66 @@
 #define TACQ                  (2)
 #define STARTUP_DELAY         (100)
 
+/** Configuration settings of the ADC.
+    This should *not* be modified directly by the user.
+    Incorrect configuration combinations may lead to unpredictable results and potentially damage the ADC! */
 struct AD7689_conf {
-  bool    CFG_conf;
-  uint8_t INCC_conf;
-  uint8_t INx_conf;
-  uint8_t BW_conf;
-  uint8_t REF_conf;
-  uint8_t SEQ_conf;
-  float   REF_voltage;
-  bool    RB_conf;
+  bool    CFG_conf;       /*!< True if configuration command should be updated. */
+  uint8_t INCC_conf;      /*!< Input channel configuration */
+  uint8_t INx_conf;       /*!< Number of activated input channels */
+  uint8_t BW_conf;        /*!< Bandwidth filtering */
+  uint8_t REF_conf;       /*!< Reference voltage settings */
+  uint8_t SEQ_conf;       /*!< Sequencer settings */
+  float   REF_voltage;    /*!< Reference voltages */
+  bool    RB_conf;        /*!< True if readback should be enabled */
 };
 
+/**
+ * Represents the Analog Devices AD7689, an ADC with 8 channels and 16 bit resolution.
+ */
 class AD7689 {
   protected:
-    AD7689_conf conf;
-    bool init_complete = false;
+    AD7689_conf conf;                       /*!< Configuration settings for the ADC. */
+    bool init_complete = false;             /*!< A value indicating if the initialization sequence has been completed. */
 
-    const SPISettings AD7689_settings;
+    const SPISettings AD7689_settings;      /*!< SPI connection settings. ADC uses CPOL = 0 and CPHA = 0 */
+    uint8_t SS;		                          /*!< MCU pin that drives the Slave Select pin of the ADC. Must be a digital IO pin. */
+    float posref;                           /*!< Positive voltage reference for unipolar or bipolar mode. */
+    float negref;                           /*!< Negative voltage reference, either COM or ground. */
 
-    // Supports highly accurate sample time
-    uint8_t SS;		// chip select pin to use (10 is standard)
-    float posref;
-    float negref;
+    uint32_t timeStamps[TOTAL_CHANNELS];    /*!< Last set of time stamps for each channel. */
+    uint16_t samples[TOTAL_CHANNELS];       /*!< Last set of samples for each channel. */
+    uint16_t framePeriod;                   /*!< Length of a single frame, in microseconds. */
+    uint16_t curTemp;                       /*!< Last temperature measurement. */
+    uint16_t tempTime;                      /*!< Time stamp for last temperature measurement. */
+    uint32_t lastSeqEndTime;                /*!< Time stamp of the end of the last data acquisition sequence. */
 
-    uint32_t timeStamps[TOTAL_CHANNELS]; // time stamps for each sample
-    uint16_t samples[TOTAL_CHANNELS];
-    uint16_t framePeriod;
-    uint16_t curTemp;
-    uint16_t tempTime;
-    uint32_t lastSeqEndTime;
+    bool sequencerActive;                   /*!< True when the sequencer is initialized, false at start-up or during self tests */
 
-    bool sequencerActive;   // true when the sequencer is initialized, false at start-up or during self tests
+    uint8_t refsrc;                         /*!< Positive voltage eference source. */
+    uint8_t inputConfig;                    /*!< Input channel configuration. */
+    uint8_t inputCount;                     /*!< Number of input channels. Even for differential mode. */
+    uint8_t refConfig;                      /*!< Voltage reference configuration. */
+    bool filterConfig;                      /*!< Input filter configuration. */
 
-    uint8_t refsrc;
-
-    uint8_t inputConfig;
-    uint8_t inputCount;
-    uint8_t refConfig;
-    bool filterConfig;
-
+    // functions are documented in the .cpp file.
     uint16_t shiftTransaction(uint16_t command, bool readback, uint16_t* rb_cmd_ptr);
     uint16_t toCommand(AD7689_conf cfg) const;
     AD7689_conf getADCConfig(bool default_config = false);
-
     float readTemperature(void);
-
     void configureSequencer();
     void readChannels(uint8_t channels, uint8_t mode, uint16_t* data, uint16_t* temp);
-
     float calculateVoltage(uint16_t sample) const;
     float calculateTemp(uint16_t temp) const;
-
     uint32_t initSampleTiming(void);
     void cycleTimingBenchmark(void);
 
   public:
-
     AD7689(uint8_t SSpin, uint8_t numberChannels = TOTAL_CHANNELS);
     void setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential);
-
     void enableFiltering(bool onOff);
-
     float acquireChannel(uint8_t channel, uint32_t* timeStamp);
     float acquireTemperature();
-
     bool selftest(void);
 };
 #endif
