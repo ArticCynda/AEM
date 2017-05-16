@@ -1,5 +1,5 @@
-// This example illustrates the different settings for input polarity, differential measurements and voltage references,
-// and how they can be set. Note: external reference voltages require modifications to the AD7689 shield.
+// This example illustrates how the AD7689 can be used to measure differential signals.
+// For this to work, ADC channel 0 must be connected to the positive signal input, and channel 1 to the negative signal input.
 
 #include <ad7689.h>
 
@@ -33,12 +33,10 @@ void setup() {
   //   REF_GND:            reference with respect to ADC ground
   //   REF_COM:            reference with respect to common mode input
   // note: when reference is set to internal with another voltage level than 2.5V or 4.096V, the ADC will default to 4.096V
-  adc->setReference(REF_INTERNAL, 4.096, UNIPOLAR_MODE, false);
+  adc->setReference(REF_INTERNAL, 4.096, DIFFERENTIAL_MODE, true);
 }
 
 void loop() {
-  Serial.print("AD7689 voltage input "+ String(ch_cnt)+" :");
-  Serial.println(adc->acquireChannel(ch_cnt, NULL), DEC);
-  ch_cnt = (ch_cnt + 1) % 8;
+  Serial.println("Differential input voltage " + String(adc->acquireChannel(1, NULL)));
   delay(200);
 }

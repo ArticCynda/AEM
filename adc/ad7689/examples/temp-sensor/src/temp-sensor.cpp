@@ -1,9 +1,9 @@
 // this example demonstrates how the AD7689 can be used as a temperature sensor
 
-#include "../../../driver/src/ad7689.h"
+#include <ad7689.h>
 
-AD7689 *ADC;
-const uint8_t AD7689_SS_pin  10;
+AD7689 *adc;
+const uint8_t AD7689_SS_pin = 10;
 
 void setup() {
   // first initialize the serial debugger
@@ -11,17 +11,17 @@ void setup() {
   while(!Serial);
 
   // AD7689 connected through SPI with SS specified in constructor
-  ADC = new AD7689(AD7689_SS_pin);
-  if (ADC->selftest())
+  adc = new AD7689(AD7689_SS_pin);
+  if (adc->selftest())
   {
     Serial.println("AD7689 connected and ready");
   } else {
-    Serial.println("Error: couldn't connect to AD7689. Check wiring.")
+    Serial.println("Error: couldn't connect to AD7689. Check wiring.");
     while (1);
   }
 }
 
 void loop() {
-  Serial.println("AD7689 temperature: " + String(ADC->acquireTemperature()), DEC);
+  Serial.println("AD7689 temperature: " + String(adc->acquireTemperature()) + " °C");
   delay(200);
 }

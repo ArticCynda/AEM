@@ -1,5 +1,5 @@
 
-#include "ad7689.h"
+#include <ad7689.h>
 
 AD7689 *adc;
 const uint8_t numberChannels = 3;
