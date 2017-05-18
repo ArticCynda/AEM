@@ -6,7 +6,7 @@
 // Code released under MIT license blah blah blah, use it however you wish, if it has been useful then let me know about your project at yannick [dot] verbelen [at] inventati [dot] org
 
 #include "ad7689.h"
-#include <SPI.h>
+//#include <SPI.h>
 
 /**
  * [AD7689::configureSequencer Enables the automatic channel sequencer of the ADC and turn on temperature measurements.]
@@ -119,7 +119,8 @@ float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
 
   *timeStamp = timeStamps[channel];
 
-  return calculateVoltage(samples[channel]);
+  return samples[channel];
+  //return calculateVoltage(samples[channel]);
 }
 
 /**
@@ -177,15 +178,19 @@ float AD7689::acquireTemperature() {
  * @param numberChannels  The highest channel in use for the application, a value between 1 and 8.
  * @return                Instance of the ADC.
  */
-AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : F_CPU, MSBFIRST, SPI_MODE0) ,
+/*AD7689::AD7689(uint8_t SSpin, uint8_t numberChannels) : AD7689_settings (F_CPU >= MAX_FREQ ? MAX_FREQ : F_CPU, MSBFIRST, SPI_MODE0) ,
                                                         SS(SSpin),
                                                         inputCount(numberChannels)  {
-  // initialize SPI transceiver
+*/
+AD7689::AD7689(uint8_t numberChannels) : inputCount(numberChannels)  {
+// initialize SPI transceiver
   // if it's already active, then this doesn't do anything
-  SPI.begin();
+  //SPI.begin();
 
-  pinMode(SS, OUTPUT);    // configure slave select pin as output (not controlled by SPI transceiver)
-  digitalWrite(SS, HIGH); // slave select active low
+  ymspi = new YMSPI(1);
+
+  //pinMode(SS, OUTPUT);    // configure slave select pin as output (not controlled by SPI transceiver)
+  //digitalWrite(SS, HIGH); // slave select active low
 
   // set default configuration options
   inputConfig = INCC_UNIPOLAR_REF_GND;  // default to unipolar mode with negative reference to ground
@@ -281,7 +286,7 @@ uint32_t AD7689::initSampleTiming() {
 /**
  * [AD7689::shiftTransaction Sends a 16 bit word to the ADC, and simultaneously captures the response.
  * ADC responses lag 2 frames behind on commands.
- * If readback is active, 32 bits will be captured instead of 16.]
+ * If readback is active, 5332 bits will be captured instead of 16.]
  * @param  command    The 16 bit command to send to the ADC.
  * @param  readback   True if readback is desired, otherwise False.
  * @param  rb_cmd_ptr A pointer to a variable to store the readback response.
@@ -295,9 +300,11 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
     delay(STARTUP_DELAY);
 
     // synchronize start of conversion
-    digitalWrite(SS, LOW);
+    //digitalWrite(SS, LOW);
+    PORTD = (PORTD | _BV(PORTD4)) ^ _BV(PORTD4);
     delayMicroseconds(TACQ); // miniumum 10 ns
-    digitalWrite(SS, HIGH);
+    //digitalWrite(SS, HIGH);
+    PORTD |= _BV(PORTD4);
     delayMicroseconds(TCONV); // minimum 3.2 µs
     init_complete = true;
   }
@@ -306,19 +313,23 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
   delayMicroseconds(TCONV);
 
   // send config (RAC mode) and acquire data
-  SPI.beginTransaction(AD7689_settings);
-  digitalWrite(SS, LOW); // activate the ADC
+  //SPI.beginTransaction(AD7689_settings);
+  //digitalWrite(SS, LOW); // activate the ADC
+  PORTD = (PORTD | _BV(PORTD4)) ^ _BV(PORTD4);
 
-  uint16_t data = (SPI.transfer(command >> 8) << 8) | SPI.transfer(command & 0xFF);
+  //uint16_t data = (SPI.transfer(command >> 8) << 8) | SPI.transfer(command & 0xFF);
+  uint16_t data = (ymspi->MSPIMTransfer(command >> 8) << 8) | ymspi->MSPIMTransfer(command & 0xFF);
 
   // if a readback is requested, the 16 bit frame is extended with another 16 bits to retrieve the value
   if (rb_cmd_ptr && readback) {
     // duplicate previous command
-    *rb_cmd_ptr = (SPI.transfer(command >> 8) << 8) | SPI.transfer(command & 0xFF);
+    *rb_cmd_ptr = (ymspi->MSPIMTransfer(command >> 8) << 8) | ymspi->MSPIMTransfer(command & 0xFF);
   }
 
-  digitalWrite(SS, HIGH); // release the ADC
-  SPI.endTransaction();
+  //digitalWrite(SS, HIGH); // release the ADC
+  PORTD |= _BV(PORTD4);
+
+  //SPI.endTransaction();
 
   // delay to allow data acquisition for the next cycle
   delayMicroseconds(TACQ); // minumum 1.2µs

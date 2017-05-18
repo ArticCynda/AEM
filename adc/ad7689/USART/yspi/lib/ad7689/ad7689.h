@@ -8,7 +8,7 @@
 #endif
 
 // required for SPI communication
-#include <SPI.h>
+#include "yspi.h"
 
 // input configuration: bipolar/unipolar, single ended or differential
 #define INCC_BIPOLAR_DIFF     (0b000) // 00X
@@ -86,8 +86,8 @@ class AD7689 {
     AD7689_conf conf;                       /*!< Configuration settings for the ADC. */
     bool init_complete = false;             /*!< A value indicating if the initialization sequence has been completed. */
 
-    const SPISettings AD7689_settings;      /*!< SPI connection settings. ADC uses CPOL = 0 and CPHA = 0 */
-    uint8_t SS;		                          /*!< MCU pin that drives the Slave Select pin of the ADC. Must be a digital IO pin. */
+    //const SPISettings AD7689_settings;      /*!< SPI connection settings. ADC uses CPOL = 0 and CPHA = 0 */
+    //uint8_t SS;		                          /*!< MCU pin that drives the Slave Select pin of the ADC. Must be a digital IO pin. */
     float posref;                           /*!< Positive voltage reference for unipolar or bipolar mode. */
     float negref;                           /*!< Negative voltage reference, either COM or ground. */
 
@@ -117,9 +117,10 @@ class AD7689 {
     float calculateTemp(uint16_t temp) const;
     uint32_t initSampleTiming(void);
     void cycleTimingBenchmark(void);
+    YMSPI *ymspi;
 
   public:
-    AD7689(uint8_t SSpin, uint8_t numberChannels = TOTAL_CHANNELS);
+    AD7689(/*uint8_t SSpin,*/ uint8_t numberChannels = TOTAL_CHANNELS);
     void setReference(uint8_t refSource, float posRef, uint8_t polarity, bool differential);
     void enableFiltering(bool onOff);
     float acquireChannel(uint8_t channel, uint32_t* timeStamp);
