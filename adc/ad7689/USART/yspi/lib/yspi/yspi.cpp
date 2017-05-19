@@ -37,7 +37,7 @@ Pins: D0 MISO (Rx)
 uint8_t YMSPI::MSPIMTransfer (uint8_t c){
   // enable slave select
   // digitalWrite (MSPIM_SS, LOW);
-  PORTD = (PORTD | _BV(PORTD4)) ^ _BV(PORTD4);
+  PORTD &= ~_BV(PORTD4);
 
   // wait for transmitter ready
   //while ((UCSR0A & _BV (UDRE0)) == 0)
