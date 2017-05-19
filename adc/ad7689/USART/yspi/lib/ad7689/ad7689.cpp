@@ -301,10 +301,10 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
 
     // synchronize start of conversion
     //digitalWrite(SS, LOW);
-    PORTD &= ~_BV(PORTD4);
+    SET_SS(LOW);
     delayMicroseconds(TACQ); // miniumum 10 ns
     //digitalWrite(SS, HIGH);
-    PORTD |= _BV(PORTD4);
+    SET_SS(HIGH);
     delayMicroseconds(TCONV); // minimum 3.2 µs
     init_complete = true;
   }
@@ -315,7 +315,7 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
   // send config (RAC mode) and acquire data
   //SPI.beginTransaction(AD7689_settings);
   //digitalWrite(SS, LOW); // activate the ADC
-  PORTD &= ~_BV(PORTD4);
+  SET_SS(LOW);
 
   //uint16_t data = (SPI.transfer(command >> 8) << 8) | SPI.transfer(command & 0xFF);
   uint16_t data = (ymspi->MSPIMTransfer(command >> 8) << 8) | ymspi->MSPIMTransfer(command & 0xFF);
@@ -327,7 +327,7 @@ uint16_t AD7689::shiftTransaction(uint16_t command, bool readback, uint16_t* rb_
   }
 
   //digitalWrite(SS, HIGH); // release the ADC
-  PORTD |= _BV(PORTD4);
+  SET_SS(HIGH);
 
   //SPI.endTransaction();
 

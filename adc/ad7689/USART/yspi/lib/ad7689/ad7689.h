@@ -64,6 +64,10 @@
 #define TACQ                  (2)
 #define STARTUP_DELAY         (100)
 
+#define SET_SS(state)         (state ? PORTD &= ~_BV(PORTD4) : PORTD |= _BV(PORTD4))
+#define SET_SS_OUT            (DDRD |= _BV(DDD4))
+#define SET_SCK_OUT           (DDRD |= _BV(DDD5))
+
 /** Configuration settings of the ADC.
     This should *not* be modified directly by the user.
     Incorrect configuration combinations may lead to unpredictable results and potentially damage the ADC! */

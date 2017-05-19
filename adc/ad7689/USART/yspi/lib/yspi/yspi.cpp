@@ -32,12 +32,14 @@ Pins: D0 MISO (Rx)
 */
 
 #include "yspi.h"
+#include <ad7689.h>
 
 // sends/receives one byte
-uint8_t YMSPI::MSPIMTransfer (uint8_t c){
+uint8_t YMSPI::MSPIMTransfer (uint8_t data){
   // enable slave select
   // digitalWrite (MSPIM_SS, LOW);
-  PORTD &= ~_BV(PORTD4);
+  /*
+  SET_SS(LOW);
 
   // wait for transmitter ready
   //while ((UCSR0A & _BV (UDRE0)) == 0)
@@ -56,70 +58,56 @@ uint8_t YMSPI::MSPIMTransfer (uint8_t c){
   // disable slave select
   //digitalWrite (MSPIM_SS, HIGH);
   //PORTD4 = 1;
-  PORTD = PORTD | _BV(PORTD4);
+  SET_SS(HIGH);
 
   // receive byte, return it
   //return UDR0;
   return UDR1;
+  */
+
+  /* Wait for empty transmit buffer */
+  while ( !( UCSR1A & (_BV(UDRE1))));
+  /* Put data into buffer, sends the data */
+  UDR1 = data;
+  /* Wait for data to be received */
+  while( !(UCSR1A & (_BV(RXC1))) );
+  /* Get and return received data from buffer */
+  return UDR1;
+
 }  // end of MSPIMTransfer
-
-/*
-// select slave, write a string, wait for transfer to complete, deselect slave
-void spiWriteString (const char * str)
-  {
-  if (!str) return;  // Sanity Clause
-
-  char c;
-
-  // enable slave select
-  digitalWrite (MSPIM_SS, LOW);
-
-  // send the string
-  while (c = *str++)
-    MSPIMTransfer (c);
-
-  // wait for all transmissions to finish
-  while ((UCSR0A & _BV (TXC0)) == 0)
-    {}
-
-  // disable slave select
-  digitalWrite (MSPIM_SS, HIGH);
-  }  // end of spiWriteString
-*/
-
 
 YMSPI::YMSPI(uint8_t usartID) {
   //pinMode (MSPIM_SS, OUTPUT);   // SS
   // slave select pin to output
-  //DDRD = (DDRD | _BV(DDD4)) ^ _BV(DDD4);
-  DDRD |= _BV(DDD4);
+  SET_SS_OUT;
 
   switch (usartID){
   case 0:
     break;
   case 1:
-    //MSPIM_SCK = UART_SCK_0
 
     // must be zero before enabling the transmitter
-    //UBRR0 = 0;
     UBRR1 = 0;
 
-    //UCSR0A = _BV (TXC0);  // any old transmit now complete
-    UCSR1A = _BV (TXC1);  // any old transmit now complete
+    // set XCKn port pin as output, enables master mode
+    SET_SCK_OUT;
 
-    //pinMode (MSPIM_SCK, OUTPUT);   // set XCK pin as output to enable master mode
-    //DDD5 = 0; // set CLK pin mode to OUTPUT mode
-    //DDRD = (DDRD | _BV(DDD5)) ^ _BV(DDD5);
-    DDRD |= _BV(DDD5);
+    /* Set MSPI mode of operation and SPI data mode 0. */
+    UCSR1C = _BV(UMSEL11) | _BV(UMSEL10);
+    /* Enable receiver and transmitter. */
+    UCSR1B = _BV(RXEN1) | _BV(TXEN1);
+    /* Set baud rate. */
+    /* IMPORTANT: The Baud Rate must be set after the transmitter is enabled */
+    UBRR1 = 0; // maximum speed
 
     //UCSR0C = _BV (UMSEL00) | _BV (UMSEL01);  // Master SPI mode
-    UCSR1C = _BV (UMSEL10) | _BV (UMSEL11);  // Master SPI mode
+    //UCSR1C = _BV (UMSEL10) | _BV (UMSEL11);  // Master SPI mode
 
     //UCSR0B = _BV (TXEN0) | _BV (RXEN0);  // transmit enable and receive enable
-    UCSR1B = _BV (TXEN1) | _BV (RXEN1);  // transmit enable and receive enable
+    //UCSR1B = _BV (TXEN1) | _BV (RXEN1);  // transmit enable and receive enable
 
     // must be done last, see page ??206??
-    UBRR1 = 3;  // 2 Mhz clock rate
+    //UBRR1 = 0;  // 2 Mhz clock rate
     break;
   case 2:
     break;
