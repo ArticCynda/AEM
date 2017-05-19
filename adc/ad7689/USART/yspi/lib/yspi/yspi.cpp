@@ -36,34 +36,8 @@ Pins: D0 MISO (Rx)
 
 // sends/receives one byte
 uint8_t YMSPI::MSPIMTransfer (uint8_t data){
-  // enable slave select
-  // digitalWrite (MSPIM_SS, LOW);
-  /*
-  SET_SS(LOW);
 
-  // wait for transmitter ready
-  //while ((UCSR0A & _BV (UDRE0)) == 0)
-  while ((UCSR1A & _BV (UDRE1)) == 0)
-    {}
-
-  // send byte
-  //UDR0 = c;
-  UDR1 = c;
-
-  // wait for receiver ready
-  //while ((UCSR0A & _BV (RXC0)) == 0)
-  while ((UCSR1A & _BV (RXC1)) == 0)
-    {}
-
-  // disable slave select
-  //digitalWrite (MSPIM_SS, HIGH);
-  //PORTD4 = 1;
-  SET_SS(HIGH);
-
-  // receive byte, return it
-  //return UDR0;
-  return UDR1;
-  */
+  UCSR1A |= _BV(TXC1); // clear transmit complete flag
 
   /* Wait for empty transmit buffer */
   while ( !( UCSR1A & (_BV(UDRE1))));
@@ -77,8 +51,7 @@ uint8_t YMSPI::MSPIMTransfer (uint8_t data){
 }  // end of MSPIMTransfer
 
 YMSPI::YMSPI(uint8_t usartID) {
-  //pinMode (MSPIM_SS, OUTPUT);   // SS
-  // slave select pin to output
+  // set SS as output (this has been tested, works)
   SET_SS_OUT;
 
   switch (usartID){
@@ -89,16 +62,21 @@ YMSPI::YMSPI(uint8_t usartID) {
     // must be zero before enabling the transmitter
     UBRR1 = 0;
 
-    // set XCKn port pin as output, enables master mode
+    // set XCKn port pin as output, enables master mode (this has been tested, works)
     SET_SCK_OUT;
 
-    /* Set MSPI mode of operation and SPI data mode 0. */
+
+    /* Set MSPI mode of operation and SPI data mode 0 (CPOL = 0, CPHA = 0) and MSB first. */
     UCSR1C = _BV(UMSEL11) | _BV(UMSEL10);
     /* Enable receiver and transmitter. */
     UCSR1B = _BV(RXEN1) | _BV(TXEN1);
+
+    Serial.print("UCSR1B: "); Serial.println(UCSR1B, BIN);
+    Serial.print("UCSR1C: "); Serial.println(UCSR1C, BIN);
+
     /* Set baud rate. */
     /* IMPORTANT: The Baud Rate must be set after the transmitter is enabled */
-    UBRR1 = 0; // maximum speed
+    UBRR1 = 416; // maximum speed
 
     //UCSR0C = _BV (UMSEL00) | _BV (UMSEL01);  // Master SPI mode
     //UCSR1C = _BV (UMSEL10) | _BV (UMSEL11);  // Master SPI mode
