@@ -7,6 +7,7 @@ const uint8_t numberChannels = 3;
 void setup() {
   Serial.begin(115200);
   while (!Serial);
+  pinMode(10, OUTPUT);
 
   adc = new AD7689(10);
   Serial.println("selftest: " + String(adc->selftest() ? "success" : "failed"));
@@ -21,5 +22,5 @@ void loop() {
   Serial.print(adc->acquireChannel(i, &timestamp), DEC);
   Serial.print("    timestamp: "); Serial.println(timestamp, DEC);
   i= (i+1)%8;
-  delay(500);
+  delay(1000);
 }

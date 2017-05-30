@@ -64,6 +64,8 @@
 #define TACQ                  (2)
 #define STARTUP_DELAY         (100)
 
+//#define DEBUG
+
 /** Configuration settings of the ADC.
     This should *not* be modified directly by the user.
     Incorrect configuration combinations may lead to unpredictable results and potentially damage the ADC! */

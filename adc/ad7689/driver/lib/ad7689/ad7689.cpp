@@ -108,9 +108,23 @@ void AD7689::enableFiltering(bool onOff) {
  * @return           Measured voltage.
  */
 float AD7689::acquireChannel(uint8_t channel, uint32_t* timeStamp) {
-  if (micros() > (timeStamps[channel] + framePeriod * (TOTAL_CHANNELS - 1))) { // sequence outdated, acquire a new one
+  if (!sequencerActive)
+    configureSequencer();
+
+  uint32_t sequence_duration = framePeriod * inputCount;
+  uint32_t sample_lifetime = micros() - (timeStamps[channel] + sequence_duration);
+
+#ifdef DEBUG
+  Serial.println("sample lifetime: " + String(sample_lifetime) + ", sequence duration: " + String(sequence_duration));
+#endif
+
+  if (sample_lifetime > sequence_duration ) { // sequence outdated, acquire a new one
     uint8_t cycles = 1;
     if (channel < 2) cycles++; // double sequence to update first 2 channels
+
+#ifdef DEBUG
+  Serial.println("cycles: " + String(cycles));
+#endif
 
     // run 1 or 2 sequences depending on the outdated channel
     for (uint8_t cycle = 0; cycle < cycles; cycle++)
@@ -155,7 +169,7 @@ float AD7689::calculateTemp(uint16_t temp) const {
 float AD7689::acquireTemperature() {
   if (sequencerActive) {
     // when the sequencer is active, check the time stamp of the last temperature sample and take a new measurement if outdated
-    if (micros() > (tempTime + framePeriod * (TOTAL_CHANNELS - 1)))  // temperature outdated, acquire a new one
+    if (micros() > (tempTime + framePeriod * TOTAL_CHANNELS))  // temperature outdated, acquire a new one
       readChannels(inputCount, ((inputConfig == INCC_BIPOLAR_DIFF) || (inputConfig == INCC_UNIPOLAR_DIFF)), &samples[0], &curTemp);
 
     return calculateTemp(curTemp);
@@ -212,13 +226,18 @@ void AD7689::cycleTimingBenchmark() {
 
   uint32_t startTime = micros(); // record current CPU time
   uint16_t data;
+
   // make 10 transactions, then average the duration
   // dummy variable 'data' is assigned to emulate a realistic operation with the retrieved data
   for (uint8_t trans = 0; trans < 10; trans++)
-    data += shiftTransaction(toCommand(getADCConfig(false)), false, NULL); // default configuration, no readback
+    data += shiftTransaction(toCommand(getADCConfig(true)), false, NULL); // default configuration, no readback
 
   framePeriod = (micros() - startTime) / 10;
   lastSeqEndTime = startTime;
+
+  #ifdef DEBUG
+    Serial.println("Cycle time: " + String(framePeriod));
+  #endif
 }
 
 /**
